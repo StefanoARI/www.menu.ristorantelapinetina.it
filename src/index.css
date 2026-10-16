@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --color-pinetina-green: #27684a;
+  --color-pinetina-green-dark: #1e5239;
+  --color-pinetina-green-light: #348861;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: #111827;
+  background-color: #fcfbf9;
+}
+
+h1, h2, h3, h4, h5, h6, .font-serif {
+  font-family: var(--font-serif);
+}
+

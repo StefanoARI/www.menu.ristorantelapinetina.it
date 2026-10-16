@@ -1,0 +1,6 @@
+{
+  "name": "Ristorante La Pinetina Digital Menus",
+  "description": "Digital menu manager and generator for Ristorante La Pinetina (Alla Carta, Business Lunch, Carta dei Vini) with SEO, embedding, 2FA admin, and AI document parsing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
