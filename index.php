@@ -19,7 +19,7 @@ session_start();
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="assets/index-DWmlxEdk.js"></script>
+    <script type="module" crossorigin src="assets/index-B83S1c8j.js"></script>
     <link rel="stylesheet" crossorigin href="assets/index-9hYKzJtu.css">
   </head>
   <body>

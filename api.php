@@ -101,6 +101,7 @@ try {
     if (($rawEndpoint === 'auth/login' || $rawEndpoint === 'login') && $method === 'POST') {
         $username = isset($input['username']) ? trim($input['username']) : '';
         $password = isset($input['password']) ? trim($input['password']) : '';
+        $cleanUser = strtolower($username);
         $allowedUsers = ['assistenza@arimediagroup.it', 'risto114_gestore', 'gestore', 'admin'];
         $isMatch = false;
         $userEmail = 'assistenza@arimediagroup.it';
@@ -252,6 +253,10 @@ try {
             VALUES (?, ?, ?, ?, ?) 
             ON DUPLICATE KEY UPDATE title = VALUES(title), seo_title = VALUES(seo_title), seo_description = VALUES(seo_description), content_json = VALUES(content_json)");
         $stmt->execute([$menuKey, $title, $seoTitle, $seoDescription, $contentJson]);
+
+        echo json_encode(['success' => true]);
+        exit;
+    }
 
     // 5b. DELETE SINGLE MENU (/api/menus/:type)
     if (preg_match('/^menus\/([a-zA-Z0-9_\-]+)$/', $rawEndpoint, $matches) && $method === 'DELETE') {

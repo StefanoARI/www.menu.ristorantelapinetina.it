@@ -48,9 +48,17 @@ const europeanAllergens = [
   { id: 14, name: "14. Molluschi" }
 ];
 
-let adminUsers = [
-  { id: '1', username: 'assistenza@arimediagroup.it', email: 'assistenza@arimediagroup.it', role: 'Super Admin' },
-  { id: '2', username: 'risto114_gestore', email: 'assistenza@arimediagroup.it', role: 'Gestore' }
+interface AdminUser {
+  id: string;
+  username: string;
+  email: string;
+  role: string;
+  password?: string;
+}
+
+let adminUsers: AdminUser[] = [
+  { id: '1', username: 'assistenza@arimediagroup.it', email: 'assistenza@arimediagroup.it', role: 'Super Admin', password: 'Pinetina2026#Sec' },
+  { id: '2', username: 'risto114_gestore', email: 'assistenza@arimediagroup.it', role: 'Gestore', password: 'Pinetina2026#Sec' }
 ];
 
 let menuData: Record<string, any> = {

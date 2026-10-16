@@ -79,7 +79,7 @@ try {
     $stmt = $pdo->query("SELECT * FROM menus");
     $menus = $stmt->fetchAll();
 } catch (Exception $e) {
-    $error = "Errore DB: " . $e.getMessage();
+    $error = "Errore DB: " . $e->getMessage();
 }
 ?>
 <!DOCTYPE html>
