@@ -3,8 +3,10 @@
  * Ristorante La Pinetina - Digital Menu Viewer (SEO Optimized)
  * Ospitato su: http://menu.ristorantelapinetina.it/
  */
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
+
 require_once 'db.php';
-$pdo = getDBConnection();
 
 $menu_type = isset($_GET['menu']) ? $_GET['menu'] : 'alla_carta';
 
@@ -19,18 +21,25 @@ $slug_map = [
 
 $db_key = isset($slug_map[$menu_type]) ? $slug_map[$menu_type] : 'alla_carta';
 
-$stmt = $pdo->prepare("SELECT * FROM menus WHERE menu_key = ?");
-$stmt->execute([$db_key]);
-$menu_row = $stmt->fetch();
-
 $title = "Ristorante La Pinetina - Menù Digitale";
 $description = "Esplora i nostri menù digitali ufficiali.";
 $content = null;
+$menu_row = null;
 
-if ($menu_row) {
-    $title = $menu_row['seo_title'] ?? $menu_row['title'];
-    $description = $menu_row['seo_description'] ?? '';
-    $content = json_decode($menu_row['content_json'], true);
+try {
+    $pdo = getDBConnection();
+    $stmt = $pdo->prepare("SELECT * FROM menus WHERE menu_key = ?");
+    $stmt->execute([$db_key]);
+    $menu_row = $stmt->fetch();
+
+    if ($menu_row) {
+        $title = $menu_row['seo_title'] ?? $menu_row['title'];
+        $description = $menu_row['seo_description'] ?? '';
+        $content = json_decode($menu_row['content_json'], true);
+    }
+} catch (Exception $e) {
+    // Gestione graceful se le tabelle non esistono ancora
+    $error_message = $e->getMessage();
 }
 ?>
 <!DOCTYPE html>
@@ -76,6 +85,12 @@ if ($menu_row) {
             <h1><?php echo htmlspecialchars($menu_row['title'] ?? 'Menù Digitale'); ?></h1>
         </div>
         
+        <?php if (isset($error_message)): ?>
+            <div style="background: #fff3f3; border: 1px solid #ffcdd2; color: #c62828; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <strong>Avviso Database:</strong> Assicurati di aver importato lo script SQL in phpMyAdmin. Dettaglio: <?php echo htmlspecialchars($error_message); ?>
+            </div>
+        <?php endif; ?>
+
         <?php if ($content && isset($content['categories'])): ?>
             <?php foreach ($content['categories'] as $cat): ?>
                 <div class="category-section">
@@ -101,14 +116,14 @@ if ($menu_row) {
                                 </div>
                                 <div class="item-price">
                                     <?php echo !empty($item['price']) ? '€' . htmlspecialchars($item['price']) : ''; ?>
-                                </div>
+                                }
                             </div>
                         <?php endforeach; ?>
                     </div>
                 </div>
             <?php endforeach; ?>
         <?php else: ?>
-            <p style="text-align: center; color: #666;">Nessun contenuto trovato per questo menù nel database.</p>
+            <p style="text-align: center; color: #666;">Seleziona un menù valido o importa i dati nel database MySQL.</p>
         <?php endif; ?>
     </div>
 </body>
