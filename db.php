@@ -7,7 +7,7 @@
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'risto114_menu');
 define('DB_USER', 'risto114_gestore');
-define('DB_PASS', '?wef#cZJ*hCN^~aY');
+define('DB_PASS', 'Pinetina2026#Sec');
 define('DB_CHARSET', 'utf8mb4');
 
 function getDBConnection() {
