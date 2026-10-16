@@ -25,7 +25,7 @@ export default function App() {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [authStep, setAuthStep] = useState<'login' | '2fa' | 'dashboard'>('login');
   const [loginUsername, setLoginUsername] = useState('risto114_gestore');
-  const [loginPassword, setLoginPassword] = useState('?wef#cZJ*hCN^~aY');
+  const [loginPassword, setLoginPassword] = useState('Pinetina2026#Sec');
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [debug2FACode, setDebug2FACode] = useState('');
   const [authError, setAuthError] = useState('');
