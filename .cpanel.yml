@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/risto114/public_html/menu/
+    - /bin/cp -R index.php db.php schema.sql $DEPLOYPATH
