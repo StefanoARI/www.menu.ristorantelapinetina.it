@@ -1,3 +1,18 @@
+<IfModule mod_headers.c>
+    # Rimuovi X-Frame-Options per consentire l'incorporamento iframe in www.ristorantelapinetina.it
+    Header unset X-Frame-Options
+    Header always unset X-Frame-Options
+
+    # Autorizza esplicitamente l'incorporamento del menù nel sito principale www.ristorantelapinetina.it e ristorantelapinetina.it
+    Header set Content-Security-Policy "frame-ancestors *;"
+    Header always set Content-Security-Policy "frame-ancestors *;"
+
+    # Abilita CORS per il caricamento di risorse, font e API
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+</IfModule>
+
 RewriteEngine On
 
 # Route /api/* requests to api.php

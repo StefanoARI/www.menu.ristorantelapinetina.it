@@ -18,3 +18,38 @@ h1, h2, h3, h4, h5, h6, .font-serif {
   font-family: var(--font-serif);
 }
 
+/* Ensure cursor pointer on hover for all interactive elements across the application */
+button,
+[role="button"],
+a,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="checkbox"],
+input[type="radio"],
+select,
+summary,
+label[for],
+.cursor-pointer,
+nav a,
+nav button,
+[tabindex="0"] {
+  cursor: pointer !important;
+}
+
+button *,
+a * {
+  cursor: pointer !important;
+}
+
+/* Exact requested custom background settings for frontend menu */
+.pinetina-menu-frontend-bg {
+  background-image: url('https://ristorantelapinetina.it/wp-content/uploads/2026/05/La-Pinetina_15.jpg');
+  background-position: center center;
+  background-size: contain;
+  background-attachment: fixed;
+  background-repeat: repeat;
+  position: relative;
+  padding-top: 4%;
+  padding-bottom: 4%;
+}

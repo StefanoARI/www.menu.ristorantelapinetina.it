@@ -1,5 +1,7 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/risto114/menu.ristorantelapinetina.it/
-    - /bin/cp -R index.php admin.php api.php db.php schema.sql .htaccess assets $DEPLOYPATH
+    - export DEPLOYPATH=/home/risto114/menu.ristorantelapinetina.it
+    - /bin/mkdir -p $DEPLOYPATH
+    - /bin/cp -rf * $DEPLOYPATH/
+    - /bin/cp -f .htaccess $DEPLOYPATH/

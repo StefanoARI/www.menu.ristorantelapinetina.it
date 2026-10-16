@@ -6,12 +6,13 @@ import {
   ArrowUp, ArrowDown, Star, AlertTriangle, BookOpen, Users, ChevronRight, Menu as MenuIcon, X, GripVertical, PlusCircle, Printer,
   EyeOff, Key, Power, Layers, FolderPlus
 } from 'lucide-react';
-
 export default function App() {
-  const isEmbed = typeof window !== 'undefined' && (new URLSearchParams(window.location.search).get('embed') === '1' || new URLSearchParams(window.location.search).get('embed') === 'true');
+  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const isEmbed = urlParams ? (urlParams.get('embed') === '1' || urlParams.get('embed') === 'true') : false;
+  const initialMenuKey = urlParams ? (urlParams.get('menu') || 'alla_carta') : 'alla_carta';
   const [activeTab, setActiveTab] = useState<'frontend' | 'admin'>('frontend');
   const [adminSection, setAdminSection] = useState<'menus' | 'users' | 'new_menu' | 'embeds' | 'ai_upload'>('menus');
-  const [selectedMenuType, setSelectedMenuType] = useState<string>('alla_carta');
+  const [selectedMenuType, setSelectedMenuType] = useState<string>(initialMenuKey);
   const [menusData, setMenusData] = useState<any>(null);
   const [allergensList, setAllergensList] = useState<any[]>([]);
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
@@ -65,8 +66,10 @@ export default function App() {
       setMenusData(data.menus);
       setAllergensList(data.allergens);
       setAdminUsers(data.users || []);
-      if (data.menus[selectedMenuType]) {
-        setEditingMenu(JSON.parse(JSON.stringify(data.menus[selectedMenuType])));
+      const menuToSelect = (data.menus && data.menus[initialMenuKey]) ? initialMenuKey : (data.menus && Object.keys(data.menus)[0] ? Object.keys(data.menus)[0] : 'alla_carta');
+      setSelectedMenuType(menuToSelect);
+      if (data.menus && data.menus[menuToSelect]) {
+        setEditingMenu(JSON.parse(JSON.stringify(data.menus[menuToSelect])));
       }
       setLoading(false);
     } catch (err) {
@@ -511,35 +514,49 @@ export default function App() {
       {/* Main Content */}
       <main className="flex-1">
         {activeTab === 'frontend' ? (
-          <div>
-            <div className="bg-gradient-to-b from-stone-100 to-[#fcfbf9] border-b border-stone-200 py-6 px-4">
-              <div className="max-w-5xl mx-auto text-center mb-6">
-                <span className="text-[#27684a] uppercase tracking-[0.2em] text-xs font-bold block mb-2">Esplora l'Eccellenza Culinaria</span>
-                <h2 className="text-3xl md:text-4xl font-serif font-bold text-stone-900">Scegli il Menù Ufficiale</h2>
+          <div 
+            className="pinetina-menu-frontend-bg min-h-screen"
+            style={{
+              backgroundImage: 'url(https://ristorantelapinetina.it/wp-content/uploads/2026/05/La-Pinetina_15.jpg)',
+              backgroundPosition: 'center center',
+              backgroundSize: 'contain',
+              backgroundAttachment: 'fixed',
+              backgroundRepeat: 'repeat',
+              position: 'relative',
+              paddingTop: '4%',
+              paddingBottom: '4%',
+            }}
+          >
+            {!isEmbed && (
+              <div className="max-w-4xl mx-auto px-4 mb-8">
+                <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 md:p-8 shadow-xl border border-stone-200/80 text-center">
+                  <span className="text-[#27684a] uppercase tracking-[0.2em] text-xs font-bold block mb-2">Esplora l'Eccellenza Culinaria</span>
+                  <h2 className="text-3xl md:text-4xl font-serif font-bold text-stone-900 mb-6">Scegli il Menù Ufficiale</h2>
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    {menusData && Object.keys(menusData).filter(key => menusData[key].isActive !== false).map((key) => {
+                      const m = menusData[key];
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => setSelectedMenuType(key)}
+                          className={`px-6 py-3 rounded-2xl text-sm font-semibold transition-all flex items-center space-x-2.5 shadow-xs cursor-pointer ${
+                            selectedMenuType === key 
+                              ? 'bg-[#27684a] text-white shadow-md scale-105 ring-2 ring-[#27684a]/30' 
+                              : 'bg-stone-50 text-stone-700 hover:bg-stone-100 border border-stone-300'
+                          }`}
+                        >
+                          <Utensils className="w-4 h-4" />
+                          <span>{m.title}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-              <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-center gap-3">
-                {menusData && Object.keys(menusData).filter(key => menusData[key].isActive !== false).map((key) => {
-                  const m = menusData[key];
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => setSelectedMenuType(key)}
-                      className={`px-6 py-3 rounded-2xl text-sm font-semibold transition-all flex items-center space-x-2.5 shadow-xs ${
-                        selectedMenuType === key 
-                          ? 'bg-[#27684a] text-white shadow-md scale-105 ring-2 ring-[#27684a]/30' 
-                          : 'bg-white text-stone-700 hover:bg-stone-100 border border-stone-300'
-                      }`}
-                    >
-                      <Utensils className="w-4 h-4" />
-                      <span>{m.title}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            )}
 
             {currentMenu && currentMenu.isActive === false ? (
-              <div className="max-w-2xl mx-auto my-16 px-6 py-12 bg-white rounded-3xl border border-stone-200 text-center shadow-md">
+              <div className="max-w-2xl mx-auto my-12 px-6 py-12 bg-white/95 backdrop-blur-md rounded-3xl border border-stone-200 text-center shadow-xl">
                 <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4 border border-amber-200 shadow-xs">
                   <AlertTriangle className="w-8 h-8" />
                 </div>
@@ -554,7 +571,7 @@ export default function App() {
                       const firstActive = Object.keys(menusData).find(k => menusData[k].isActive !== false);
                       if (firstActive) setSelectedMenuType(firstActive);
                     }}
-                    className="px-6 py-3 bg-[#27684a] hover:bg-[#1e5239] text-white rounded-xl font-semibold shadow-md transition"
+                    className="px-6 py-3 bg-[#27684a] hover:bg-[#1e5239] text-white rounded-xl font-semibold shadow-md transition cursor-pointer"
                   >
                     Visualizza i Menù Disponibili
                   </button>
@@ -562,14 +579,14 @@ export default function App() {
               </div>
             ) : (
               <>
-                <div className="bg-white/95 backdrop-blur-md border-b border-stone-200 sticky top-24 z-40 py-3 px-4 shadow-xs">
-                  <div className="max-w-5xl mx-auto flex items-center space-x-3 overflow-x-auto no-scrollbar py-1">
+                <div className="max-w-4xl mx-auto px-4 sticky top-4 z-40 mb-8">
+                  <div className="bg-white/95 backdrop-blur-md border border-stone-200/90 rounded-2xl py-3 px-4 shadow-lg flex items-center space-x-3 overflow-x-auto no-scrollbar">
                     <span className="text-xs uppercase tracking-wider text-stone-400 font-bold shrink-0">Indice Portate:</span>
                     {currentMenu?.categories?.map((cat: any) => (
                       <a
                         key={cat.id}
                         href={`#cat-${cat.id}`}
-                        className="text-sm font-medium text-stone-700 hover:text-white hover:bg-[#27684a] whitespace-nowrap px-4 py-2 rounded-xl transition border border-stone-200/80 bg-stone-50"
+                        className="text-sm font-medium text-stone-700 hover:text-white hover:bg-[#27684a] whitespace-nowrap px-4 py-2 rounded-xl transition border border-stone-200/80 bg-stone-50 cursor-pointer"
                       >
                         {cat.name}
                       </a>
@@ -577,8 +594,9 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="max-w-4xl mx-auto px-4 py-16">
-                  <div className="text-center mb-16">
+                <div className="max-w-4xl mx-auto px-4">
+                  <div className="bg-white/95 backdrop-blur-md rounded-3xl p-8 md:p-12 shadow-xl border border-stone-200/80 text-center mb-12 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#27684a]"></div>
                     <span className="text-[#27684a] uppercase tracking-[0.25em] text-xs font-bold block mb-3">Ristorante La Pinetina</span>
                     <h1 className="text-4xl md:text-6xl font-serif font-bold text-stone-900 mb-4 tracking-tight">
                       {currentMenu?.title}
@@ -587,11 +605,11 @@ export default function App() {
                       <p className="text-stone-600 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">{currentMenu.seoDescription}</p>
                     )}
                     {currentMenu?.subtitle && (
-                      <div className="mt-3 inline-block bg-[#27684a]/10 text-[#27684a] font-semibold px-4 py-1.5 rounded-full text-sm">
+                      <div className="mt-4 inline-block bg-[#27684a]/10 text-[#27684a] font-semibold px-5 py-2 rounded-full text-sm border border-[#27684a]/20">
                         {currentMenu.subtitle}
                       </div>
                     )}
-                    <div className="w-32 h-1 bg-[#27684a] mx-auto mt-6 rounded-full"></div>
+                    <div className="w-24 h-1 bg-[#27684a] mx-auto mt-6 rounded-full"></div>
                   </div>
 
                   <div className="space-y-16">
