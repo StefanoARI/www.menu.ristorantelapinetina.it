@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Utensils, Wine, Briefcase, Lock, Mail, ShieldCheck, 
   FileText, Code, Settings, LogOut, Check, 
   Copy, Edit3, Plus, Trash2, Search, AlertCircle, Eye, RefreshCw, CheckCircle2,
-  ArrowUp, ArrowDown, Star, AlertTriangle, BookOpen, Users, ChevronRight, Menu as MenuIcon, X, GripVertical, PlusCircle,
+  ArrowUp, ArrowDown, Star, AlertTriangle, BookOpen, Users, ChevronLeft, ChevronRight, Menu as MenuIcon, X, GripVertical, PlusCircle,
   EyeOff, Key, Power, Layers, FolderPlus, Sparkles
 } from 'lucide-react';
 import { fullWineMenu } from './data/wineData';
@@ -21,6 +21,11 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [showAllergensModal, setShowAllergensModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Active category on scroll and sticky bar state
+  const [activeCategory, setActiveCategory] = useState<string>('');
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const categoryNavRef = useRef<HTMLDivElement>(null);
 
   // Drag and drop state
   const [draggedItem, setDraggedItem] = useState<{ catIndex: number; itemIndex: number } | null>(null);
@@ -50,6 +55,8 @@ export default function App() {
   const [newUserPassword, setNewUserPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [copiedPassword, setCopiedPassword] = useState(false);
+
+  const currentMenu = menusData ? menusData[selectedMenuType] : null;
 
   useEffect(() => {
     fetchData();
@@ -95,6 +102,60 @@ export default function App() {
     } catch (err) {
       console.error('Error fetching data:', err);
       setLoading(false);
+    }
+  };
+
+  // Scroll Spy: rileva automaticamente la portata attualmente visibile nello scroll e gestisce pulsante Torna Su
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+
+      if (activeTab === 'frontend' && currentMenu?.categories?.length) {
+        const scrollPosition = window.scrollY + 140;
+        const categories = currentMenu.categories;
+        for (let i = categories.length - 1; i >= 0; i--) {
+          const el = document.getElementById(`cat-${categories[i].id}`);
+          if (el && scrollPosition >= el.offsetTop) {
+            setActiveCategory(categories[i].id);
+            return;
+          }
+        }
+        if (categories[0]) {
+          setActiveCategory(categories[0].id);
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [activeTab, currentMenu]);
+
+  // Centra automaticamente la portata attiva nella barra orizzontale su mobile
+  useEffect(() => {
+    if (!activeCategory || !categoryNavRef.current) return;
+    const activeBtn = categoryNavRef.current.querySelector(`[data-cat-id="${activeCategory}"]`) as HTMLElement;
+    if (activeBtn) {
+      const container = categoryNavRef.current;
+      const targetLeft = activeBtn.offsetLeft - (container.clientWidth / 2) + (activeBtn.clientWidth / 2);
+      container.scrollTo({ left: targetLeft, behavior: 'smooth' });
+    }
+  }, [activeCategory]);
+
+  const scrollCategoryNav = (direction: 'left' | 'right') => {
+    if (categoryNavRef.current) {
+      const scrollAmount = direction === 'left' ? -220 : 220;
+      categoryNavRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const scrollToCategory = (catId: string) => {
+    setActiveCategory(catId);
+    const el = document.getElementById(`cat-${catId}`);
+    if (el) {
+      const yOffset = -70; // offset ottimizzato per la barra indice sticky
+      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
     }
   };
 
@@ -437,13 +498,11 @@ export default function App() {
     );
   }
 
-  const currentMenu = menusData ? menusData[selectedMenuType] : null;
-
   return (
     <div className="min-h-screen flex flex-col bg-[#fcfbf9] text-[#111827] selection:bg-[#27684a]/20 selection:text-[#27684a]">
       {/* Luxury Header (hidden in embed mode) */}
       {!isEmbed && (
-        <header className="bg-white/95 backdrop-blur-md border-b border-stone-200/80 sticky top-0 z-50 shadow-xs">
+        <header className={`bg-white/95 backdrop-blur-md border-b border-stone-200/80 z-30 shadow-xs ${activeTab === 'admin' ? 'sticky top-0' : 'relative'}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center justify-between">
             <div className="flex items-center space-x-4 cursor-pointer group" onClick={() => setActiveTab('frontend')}>
               <img 
@@ -588,45 +647,112 @@ export default function App() {
               </div>
             ) : (
               <>
-                <div className="max-w-4xl mx-auto px-4 sticky top-4 z-40 mb-8">
-                  <div className="bg-white/95 backdrop-blur-md border border-stone-200/90 rounded-2xl py-3 px-4 shadow-lg flex items-center space-x-3 overflow-x-auto no-scrollbar">
-                    <span className="text-xs uppercase tracking-wider text-stone-400 font-bold shrink-0">Indice Portate:</span>
-                    {currentMenu?.categories?.map((cat: any) => (
-                      <a
-                        key={cat.id}
-                        href={`#cat-${cat.id}`}
-                        className="text-sm font-medium text-stone-700 hover:text-white hover:bg-[#27684a] whitespace-nowrap px-4 py-2 rounded-xl transition border border-stone-200/80 bg-stone-50 cursor-pointer"
-                      >
-                        {cat.name}
-                      </a>
-                    ))}
+                {/* Hero Menù Card */}
+                <div className="max-w-4xl mx-auto px-4 mb-6 sm:mb-8">
+                  <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 sm:p-10 md:p-12 shadow-xl border border-stone-200/80 text-center relative overflow-hidden">
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#27684a]"></div>
+                    <span className="text-[#27684a] uppercase tracking-[0.25em] text-xs font-bold block mb-2 sm:mb-3">Ristorante La Pinetina</span>
+                    <h1 className="text-3xl sm:text-5xl md:text-6xl font-serif font-bold text-stone-900 mb-3 sm:mb-4 tracking-tight">
+                      {currentMenu?.title}
+                    </h1>
+                    {currentMenu?.seoDescription && (
+                      <p className="text-stone-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed">{currentMenu.seoDescription}</p>
+                    )}
+                    {currentMenu?.subtitle && (
+                      <div className="mt-4 inline-block bg-[#27684a]/10 text-[#27684a] font-semibold px-4 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm border border-[#27684a]/20">
+                        {currentMenu.subtitle}
+                      </div>
+                    )}
+                    <div className="w-20 sm:w-24 h-1 bg-[#27684a] mx-auto mt-4 sm:mt-6 rounded-full"></div>
+                  </div>
+                </div>
+
+                {/* Indice Portate Sticky Bar (Sempre visibile allo scroll, ottimizzato per mobile & desktop) */}
+                <div className="sticky top-0 z-40 w-full py-2 px-2 sm:px-4 mb-6 sm:mb-8">
+                  <div className="max-w-4xl mx-auto bg-white/95 backdrop-blur-md border border-stone-200/90 rounded-2xl shadow-lg shadow-stone-900/5 px-2.5 sm:px-4 py-2 sm:py-2.5 flex items-center space-x-2">
+                    
+                    {/* Left Indicator Label */}
+                    <div className="flex items-center space-x-1.5 text-xs uppercase tracking-wider text-[#27684a] font-bold shrink-0 pl-1 pr-2.5 border-r border-stone-200">
+                      <Utensils className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Indice Portate</span>
+                      <span className="sm:hidden text-[11px]">Portate</span>
+                    </div>
+
+                    {/* Scroll Left Button */}
+                    <button 
+                      type="button"
+                      onClick={() => scrollCategoryNav('left')}
+                      className="hidden sm:flex p-1.5 rounded-lg hover:bg-stone-100 text-stone-500 shrink-0 cursor-pointer transition"
+                      title="Scorri portate a sinistra"
+                      aria-label="Scorri a sinistra"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    {/* Horizontal Scrollable Categories Container */}
+                    <div 
+                      ref={categoryNavRef}
+                      className="flex-1 flex items-center space-x-2 overflow-x-auto no-scrollbar scroll-smooth py-0.5 px-0.5"
+                    >
+                      {currentMenu?.categories?.map((cat: any) => {
+                        const isActive = activeCategory === cat.id;
+                        return (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            data-cat-id={cat.id}
+                            onClick={() => scrollToCategory(cat.id)}
+                            className={`text-xs sm:text-sm font-medium whitespace-nowrap px-3.5 py-1.5 sm:py-2 rounded-xl transition-all cursor-pointer flex items-center shrink-0 border ${
+                              isActive 
+                                ? 'bg-[#27684a] text-white shadow-md border-[#27684a] font-semibold scale-[1.02]' 
+                                : 'bg-stone-50 text-stone-700 hover:bg-stone-100 hover:text-stone-900 border-stone-200/90'
+                            }`}
+                          >
+                            <span>{cat.name}</span>
+                            {cat.items && cat.items.length > 0 && (
+                              <span className={`ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                                isActive ? 'bg-white/20 text-white' : 'bg-stone-200 text-stone-600'
+                              }`}>
+                                {cat.items.length}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Scroll Right Button */}
+                    <button 
+                      type="button"
+                      onClick={() => scrollCategoryNav('right')}
+                      className="hidden sm:flex p-1.5 rounded-lg hover:bg-stone-100 text-stone-500 shrink-0 cursor-pointer transition"
+                      title="Scorri portate a destra"
+                      aria-label="Scorri a destra"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+
+                    {/* Quick Action: Allergeni */}
+                    <button
+                      type="button"
+                      onClick={() => setShowAllergensModal(true)}
+                      className="hidden md:flex items-center space-x-1 text-xs font-semibold text-stone-600 hover:text-[#27684a] px-2.5 py-1.5 sm:py-2 rounded-xl bg-stone-50 hover:bg-stone-100 border border-stone-200 shrink-0 cursor-pointer transition"
+                      title="Consulta Tabella Allergeni UE"
+                    >
+                      <BookOpen className="w-3.5 h-3.5 text-[#27684a]" />
+                      <span className="hidden lg:inline">Allergeni</span>
+                    </button>
+
                   </div>
                 </div>
 
                 <div className="max-w-4xl mx-auto px-4">
-                  <div className="bg-white/95 backdrop-blur-md rounded-3xl p-8 md:p-12 shadow-xl border border-stone-200/80 text-center mb-12 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#27684a]"></div>
-                    <span className="text-[#27684a] uppercase tracking-[0.25em] text-xs font-bold block mb-3">Ristorante La Pinetina</span>
-                    <h1 className="text-4xl md:text-6xl font-serif font-bold text-stone-900 mb-4 tracking-tight">
-                      {currentMenu?.title}
-                    </h1>
-                    {currentMenu?.seoDescription && (
-                      <p className="text-stone-600 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">{currentMenu.seoDescription}</p>
-                    )}
-                    {currentMenu?.subtitle && (
-                      <div className="mt-4 inline-block bg-[#27684a]/10 text-[#27684a] font-semibold px-5 py-2 rounded-full text-sm border border-[#27684a]/20">
-                        {currentMenu.subtitle}
-                      </div>
-                    )}
-                    <div className="w-24 h-1 bg-[#27684a] mx-auto mt-6 rounded-full"></div>
-                  </div>
-
-                  <div className="space-y-16">
+                  <div className="space-y-12 sm:space-y-16">
                 {currentMenu?.categories?.map((cat: any) => (
                   <div 
                     key={cat.id} 
                     id={`cat-${cat.id}`} 
-                    className="bg-white rounded-3xl p-8 md:p-10 shadow-lg shadow-stone-200/50 border border-stone-200/80 relative overflow-hidden scroll-mt-44 transition hover:shadow-xl"
+                    className="bg-white rounded-3xl p-6 sm:p-8 md:p-10 shadow-lg shadow-stone-200/50 border border-stone-200/80 relative overflow-hidden scroll-mt-24 md:scroll-mt-28 transition hover:shadow-xl"
                   >
                     <div className="absolute top-0 left-0 w-2.5 h-full bg-[#27684a]"></div>
                     <div className="border-b border-stone-100 pb-5 mb-8">
@@ -1629,6 +1755,18 @@ export default function App() {
             </button>
           </div>
         </div>
+      )}
+      {/* Floating Action Button: Torna in Cima allo scroll per mobile e desktop */}
+      {showScrollTop && activeTab === 'frontend' && (
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-6 right-6 z-40 p-3.5 sm:p-4 bg-[#27684a] text-white rounded-full shadow-2xl hover:bg-[#1e5239] transition-all transform hover:scale-110 active:scale-95 flex items-center justify-center border-2 border-white/90 cursor-pointer"
+          title="Torna all'inizio del menù"
+          aria-label="Torna in cima"
+        >
+          <ArrowUp className="w-5 h-5 sm:w-6 sm:h-6" />
+        </button>
       )}
 
     </div>
