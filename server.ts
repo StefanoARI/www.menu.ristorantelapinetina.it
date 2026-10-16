@@ -2,8 +2,8 @@ import express from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { GoogleGenAI } from '@google/genai';
 import nodemailer from 'nodemailer';
+import { fullWineMenu } from './src/data/wineData.js';
 
 dotenv.config();
 
@@ -24,8 +24,6 @@ app.use((_req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 // Real SMTP Transporter configuration
 const smtpTransporter = nodemailer.createTransport({
@@ -212,22 +210,7 @@ let menuData: Record<string, any> = {
       }
     ]
   },
-  vini: {
-    title: "Carta dei Vini",
-    slug: "menu-vini",
-    seoTitle: "Carta dei Vini | Ristorante La Pinetina",
-    seoDescription: "La nostra esclusiva selezione di bollicine, champagne, vini bianchi, rosati, rossi e passiti.",
-    categories: [
-      {
-        id: "bollicine",
-        name: "Bollicine & Franciacorta",
-        items: [
-          { id: "v1", name: "Athesis brut DOC (Alto Adige)", description: "Kettmeir - 12.5% Vol.", price: "45.00", isFeatured: false, extras: [] },
-          { id: "v2", name: "Ferrari Perlè 2019", description: "Ferrari - 12.5% Vol.", price: "85.00", isFeatured: true, extras: [] }
-        ]
-      }
-    ]
-  }
+  vini: fullWineMenu
 };
 
 let active2FACode: { code: string; email: string; expires: number } | null = null;
@@ -389,22 +372,6 @@ app.post('/api/auth/verify-2fa', (req, res) => {
   }
 });
 
-app.post('/api/ai/parse-menu', async (req, res) => {
-  try {
-    const { fileContent, menuType } = req.body;
-    const prompt = `Analizza questo documento ed estrai i prodotti strutturati in categorie (con nome categoria, id, descrizione, e lista di prodotti con nome, descrizione, prezzo, allergeni array numeri 1-14, isFeatured booleano, extras array con name, price, description). Rispondi in JSON valido.`;
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt + "\n\n" + fileContent
-    });
-    const textOutput = response.text || '';
-    const jsonMatch = textOutput.match(/```json([\s\S]*?)```/) || textOutput.match(/```([\s\S]*?)```/);
-    const parsedMenu = JSON.parse((jsonMatch ? jsonMatch[1] : textOutput).trim());
-    res.json({ success: true, menu: parsedMenu });
-  } catch (err: any) {
-    res.status(500).json({ error: 'Errore AI: ' + err.message });
-  }
-});
 
 app.get('/api/export-php', (req, res) => {
   res.json({

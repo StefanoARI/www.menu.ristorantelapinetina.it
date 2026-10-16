@@ -2,40 +2,36 @@ import React, { useState, useEffect } from 'react';
 import { 
   Utensils, Wine, Briefcase, Lock, Mail, ShieldCheck, 
   FileText, Code, Settings, LogOut, Check, 
-  Copy, Edit3, Plus, Trash2, Search, Sparkles, AlertCircle, Eye, RefreshCw, CheckCircle2,
-  ArrowUp, ArrowDown, Star, AlertTriangle, BookOpen, Users, ChevronRight, Menu as MenuIcon, X, GripVertical, PlusCircle, Printer,
-  EyeOff, Key, Power, Layers, FolderPlus
+  Copy, Edit3, Plus, Trash2, Search, AlertCircle, Eye, RefreshCw, CheckCircle2,
+  ArrowUp, ArrowDown, Star, AlertTriangle, BookOpen, Users, ChevronRight, Menu as MenuIcon, X, GripVertical, PlusCircle,
+  EyeOff, Key, Power, Layers, FolderPlus, Sparkles
 } from 'lucide-react';
+import { fullWineMenu } from './data/wineData';
+
 export default function App() {
   const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
   const isEmbed = urlParams ? (urlParams.get('embed') === '1' || urlParams.get('embed') === 'true') : false;
   const initialMenuKey = urlParams ? (urlParams.get('menu') || 'alla_carta') : 'alla_carta';
   const [activeTab, setActiveTab] = useState<'frontend' | 'admin'>('frontend');
-  const [adminSection, setAdminSection] = useState<'menus' | 'users' | 'new_menu' | 'embeds' | 'ai_upload'>('menus');
+  const [adminSection, setAdminSection] = useState<'menus' | 'users' | 'new_menu' | 'embeds'>('menus');
   const [selectedMenuType, setSelectedMenuType] = useState<string>(initialMenuKey);
   const [menusData, setMenusData] = useState<any>(null);
   const [allergensList, setAllergensList] = useState<any[]>([]);
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAllergensModal, setShowAllergensModal] = useState(false);
-  const [showPdfExportModal, setShowPdfExportModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Drag and drop state
   const [draggedItem, setDraggedItem] = useState<{ catIndex: number; itemIndex: number } | null>(null);
 
-  // Admin auth state
+  // Admin auth state with 24-hour persistent session
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [authStep, setAuthStep] = useState<'login' | '2fa' | 'dashboard'>('login');
   const [loginUsername, setLoginUsername] = useState('assistenza@arimediagroup.it');
   const [loginPassword, setLoginPassword] = useState('?wef#cZJ*hCN^~aY');
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [authError, setAuthError] = useState('');
-
-  // AI document parser state
-  const [aiDocText, setAiDocText] = useState('');
-  const [aiDocLoading, setAiDocLoading] = useState(false);
-  const [aiDocSuccess, setAiDocSuccess] = useState('');
 
   // Admin edit states
   const [editingMenu, setEditingMenu] = useState<any>(null);
@@ -57,19 +53,43 @@ export default function App() {
 
   useEffect(() => {
     fetchData();
+
+    // Mantieni l'utente loggato per tutto il giorno a meno che non clicchi su Esci
+    try {
+      const storedSession = localStorage.getItem('pinetina_admin_session');
+      if (storedSession) {
+        const session = JSON.parse(storedSession);
+        if (session && session.expiresAt && session.expiresAt > Date.now()) {
+          setIsAdminLoggedIn(true);
+          setAuthStep('dashboard');
+          if (session.username) setLoginUsername(session.username);
+        } else {
+          localStorage.removeItem('pinetina_admin_session');
+        }
+      }
+    } catch (e) {
+      console.error('Session recovery error:', e);
+    }
   }, []);
 
   const fetchData = async () => {
     try {
       const res = await fetch('/api/menus');
       const data = await res.json();
-      setMenusData(data.menus);
+      const loadedMenus = data.menus || {};
+      
+      // Assicura che la Carta dei Vini contenga tutte le 12 categorie complete
+      if (!loadedMenus.vini || !loadedMenus.vini.categories || loadedMenus.vini.categories.length < 5) {
+        loadedMenus.vini = fullWineMenu;
+      }
+
+      setMenusData(loadedMenus);
       setAllergensList(data.allergens);
       setAdminUsers(data.users || []);
-      const menuToSelect = (data.menus && data.menus[initialMenuKey]) ? initialMenuKey : (data.menus && Object.keys(data.menus)[0] ? Object.keys(data.menus)[0] : 'alla_carta');
+      const menuToSelect = (loadedMenus && loadedMenus[initialMenuKey]) ? initialMenuKey : (loadedMenus && Object.keys(loadedMenus)[0] ? Object.keys(loadedMenus)[0] : 'alla_carta');
       setSelectedMenuType(menuToSelect);
-      if (data.menus && data.menus[menuToSelect]) {
-        setEditingMenu(JSON.parse(JSON.stringify(data.menus[menuToSelect])));
+      if (loadedMenus && loadedMenus[menuToSelect]) {
+        setEditingMenu(JSON.parse(JSON.stringify(loadedMenus[menuToSelect])));
       }
       setLoading(false);
     } catch (err) {
@@ -111,6 +131,15 @@ export default function App() {
       if (res.ok && data.success) {
         setIsAdminLoggedIn(true);
         setAuthStep('dashboard');
+
+        // Memorizza l'accesso per 24 ore (tutto il giorno) fino al click su "Esci"
+        localStorage.setItem('pinetina_admin_session', JSON.stringify({
+          token: data.token || 'pinetina_admin_auth',
+          username: loginUsername,
+          loginTime: Date.now(),
+          expiresAt: Date.now() + 24 * 60 * 60 * 1000
+        }));
+
         fetchPhpExport();
       } else {
         setAuthError(data.error || 'Codice 2FA errato');
@@ -118,6 +147,13 @@ export default function App() {
     } catch (err) {
       setAuthError('Errore durante la verifica');
     }
+  };
+
+  const handleLogout = () => {
+    setIsAdminLoggedIn(false);
+    setAuthStep('login');
+    setTwoFactorCode('');
+    localStorage.removeItem('pinetina_admin_session');
   };
 
   const fetchPhpExport = async () => {
@@ -176,34 +212,6 @@ export default function App() {
       }
     } catch (err) {
       alert('Errore di connessione.');
-    }
-  };
-
-  const handleAiParseMenu = async () => {
-    if (!aiDocText.trim()) {
-      alert('Inserisci il testo estratto o incolla il contenuto del PDF/Word del menù.');
-      return;
-    }
-    setAiDocLoading(true);
-    setAiDocSuccess('');
-    try {
-      const res = await fetch('/api/ai/parse-menu', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileContent: aiDocText, menuType: selectedMenuType })
-      });
-      const data = await res.json();
-      if (res.ok && data.success && data.menu) {
-        setEditingMenu(data.menu);
-        setAiDocSuccess('Documento analizzato e strutturato con successo! I piatti sono stati caricati nell\'editor.');
-        setAdminSection('menus');
-      } else {
-        alert('Errore AI: ' + (data.error || 'Impossibile elaborare'));
-      }
-    } catch (err) {
-      alert('Errore di connessione al motore AI.');
-    } finally {
-      setAiDocLoading(false);
     }
   };
 
@@ -821,19 +829,13 @@ export default function App() {
                   <div>
                     <span className="text-xs uppercase tracking-widest text-[#27684a] font-bold block mb-1">Pannello di Controllo Ufficiale</span>
                     <h1 className="text-3xl md:text-4xl font-serif font-bold text-stone-900">Gestione Ristorante La Pinetina</h1>
-                    <p className="text-stone-500 text-sm mt-1">Trascina i prodotti per riordinarli, esporta in PDF con layout ufficiale e gestisci i listini.</p>
+                    <p className="text-stone-500 text-sm mt-1">Trascina i prodotti per riordinarli e gestisci i listini ufficiali.</p>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => setShowPdfExportModal(true)}
-                      className="px-5 py-3 bg-[#27684a] hover:bg-[#1e5239] text-white font-semibold rounded-xl shadow-md transition flex items-center space-x-2"
-                    >
-                      <Printer className="w-5 h-5" />
-                      <span>Esporta Menù in PDF (Layout Ufficiale)</span>
-                    </button>
                     <button 
-                      onClick={() => { setIsAdminLoggedIn(false); setAuthStep('login'); }}
-                      className="px-5 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-700 text-sm font-semibold rounded-xl flex items-center space-x-2 transition"
+                      onClick={handleLogout}
+                      className="px-5 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-700 text-sm font-semibold rounded-xl flex items-center space-x-2 transition cursor-pointer"
+                      title="Disconnetti sessione gestore"
                     >
                       <LogOut className="w-4 h-4" />
                       <span>Esci</span>
@@ -841,38 +843,31 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 bg-stone-100 p-2 rounded-2xl">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-stone-100 p-2 rounded-2xl">
                   <button
                     onClick={() => setAdminSection('menus')}
-                    className={`py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 ${adminSection === 'menus' ? 'bg-[#27684a] text-white shadow-md' : 'text-stone-700 hover:bg-white/60'}`}
+                    className={`py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 cursor-pointer ${adminSection === 'menus' ? 'bg-[#27684a] text-white shadow-md' : 'text-stone-700 hover:bg-white/60'}`}
                   >
                     <Utensils className="w-4 h-4" />
                     <span>Modifica Menù</span>
                   </button>
                   <button
                     onClick={() => setAdminSection('new_menu')}
-                    className={`py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 ${adminSection === 'new_menu' ? 'bg-[#27684a] text-white shadow-md' : 'text-stone-700 hover:bg-white/60'}`}
+                    className={`py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 cursor-pointer ${adminSection === 'new_menu' ? 'bg-[#27684a] text-white shadow-md' : 'text-stone-700 hover:bg-white/60'}`}
                   >
                     <Plus className="w-4 h-4" />
                     <span>Crea Menù</span>
                   </button>
                   <button
                     onClick={() => setAdminSection('embeds')}
-                    className={`py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 ${adminSection === 'embeds' ? 'bg-[#27684a] text-white shadow-md' : 'text-stone-700 hover:bg-white/60'}`}
+                    className={`py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 cursor-pointer ${adminSection === 'embeds' ? 'bg-[#27684a] text-white shadow-md' : 'text-stone-700 hover:bg-white/60'}`}
                   >
                     <Code className="w-4 h-4" />
                     <span>Incorpora & SEO</span>
                   </button>
                   <button
-                    onClick={() => setAdminSection('ai_upload')}
-                    className={`py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 ${adminSection === 'ai_upload' ? 'bg-[#27684a] text-white shadow-md' : 'text-stone-700 hover:bg-white/60'}`}
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    <span>Carica con AI</span>
-                  </button>
-                  <button
                     onClick={() => setAdminSection('users')}
-                    className={`py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 ${adminSection === 'users' ? 'bg-[#27684a] text-white shadow-md' : 'text-stone-700 hover:bg-white/60'}`}
+                    className={`py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 cursor-pointer ${adminSection === 'users' ? 'bg-[#27684a] text-white shadow-md' : 'text-stone-700 hover:bg-white/60'}`}
                   >
                     <Users className="w-4 h-4" />
                     <span>Utenti</span>
@@ -1595,180 +1590,11 @@ export default function App() {
                   </div>
                 )}
 
-                {adminSection === 'ai_upload' && (
-                  <div className="max-w-3xl mx-auto bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-stone-200 space-y-6">
-                    <div>
-                      <span className="text-xs uppercase tracking-widest text-[#27684a] font-bold block mb-1">Intelligenza Artificiale Gemini</span>
-                      <h3 className="font-serif text-3xl font-bold text-stone-900 flex items-center space-x-2">
-                        <Sparkles className="w-7 h-7 text-[#27684a]" />
-                        <span>Caricamento ed Estrazione Automatica Documenti</span>
-                      </h3>
-                      <p className="text-stone-500 text-sm mt-1">
-                        Incolla o carica il testo estratto dal tuo PDF o file Word del menù: l'AI identificherà automaticamente categorie, nomi dei piatti, descrizioni, prezzi, extra e allergeni UE aggiornando la struttura in tempo reale.
-                      </p>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1.5">
-                          Menù di Destinazione per il caricamento
-                        </label>
-                        <select
-                          value={selectedMenuType}
-                          onChange={(e) => {
-                            setSelectedMenuType(e.target.value);
-                            if (menusData && menusData[e.target.value]) {
-                              setEditingMenu(JSON.parse(JSON.stringify(menusData[e.target.value])));
-                            }
-                          }}
-                          className="w-full bg-stone-50 border border-stone-300 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-[#27684a]"
-                        >
-                          {menusData && Object.keys(menusData).map((k) => (
-                            <option key={k} value={k}>{menusData[k]?.title || k}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1.5">
-                          Contenuto Documento (PDF / Word / Testo Menù)
-                        </label>
-                        <textarea
-                          rows={8}
-                          value={aiDocText}
-                          onChange={(e) => setAiDocText(e.target.value)}
-                          placeholder="Incolla qui il testo del tuo menù PDF o Word (es. Antipasti, Primi, Secondi con ingredienti e prezzi)..."
-                          className="w-full bg-stone-50 border border-stone-300 rounded-2xl p-4 text-sm font-mono outline-none focus:ring-2 focus:ring-[#27684a]"
-                        />
-                      </div>
-
-                      {aiDocSuccess && (
-                        <div className="bg-emerald-50 text-emerald-800 p-4 rounded-xl border border-emerald-200 text-sm flex items-center space-x-2">
-                          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                          <span>{aiDocSuccess}</span>
-                        </div>
-                      )}
-
-                      <button
-                        onClick={handleAiParseMenu}
-                        disabled={aiDocLoading}
-                        className="w-full py-4 bg-[#27684a] hover:bg-[#1e5239] disabled:opacity-60 text-white font-semibold rounded-2xl shadow-lg transition flex items-center justify-center space-x-2 text-base"
-                      >
-                        {aiDocLoading ? (
-                          <>
-                            <RefreshCw className="w-5 h-5 animate-spin" />
-                            <span>Analisi ed Estrazione AI in corso...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-5 h-5" />
-                            <span>Elabora e Inserisci nel Menù con AI</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </div>
         )}
       </main>
-
-      {/* PDF Export Layout Modal */}
-      {showPdfExportModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#fcfbf9] rounded-3xl max-w-4xl w-full max-h-[95vh] overflow-y-auto p-8 md:p-12 shadow-2xl relative border border-stone-300">
-            <button 
-              onClick={() => setShowPdfExportModal(false)}
-              className="absolute top-6 right-6 p-2.5 rounded-full bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold z-10"
-            >
-              ✕
-            </button>
-
-            <div className="flex justify-between items-center mb-8 pb-4 border-b border-stone-300 print:hidden">
-              <div>
-                <h3 className="font-serif text-2xl font-bold text-stone-900">Anteprima Stampa / Esportazione PDF</h3>
-                <p className="text-stone-600 text-xs">Layout ufficiale di Ristorante La Pinetina per il menù: <strong className="text-[#27684a]">{currentMenu?.title}</strong></p>
-              </div>
-              <button
-                onClick={() => window.print()}
-                className="px-6 py-3 bg-[#27684a] text-white font-semibold rounded-xl hover:bg-[#1e5239] shadow-md flex items-center space-x-2"
-              >
-                <Printer className="w-5 h-5" />
-                <span>Stampa / Salva in PDF</span>
-              </button>
-            </div>
-
-            {/* Printable Menu Paper Sheet */}
-            <div className="bg-white p-10 md:p-14 rounded-2xl shadow-xl border border-stone-200 max-w-3xl mx-auto space-y-12">
-              <div className="text-center border-b-2 border-[#27684a] pb-8">
-                <span className="text-xs uppercase tracking-[0.3em] text-[#27684a] font-bold block mb-2">Ristorante La Pinetina</span>
-                <h1 className="text-4xl md:text-5xl font-serif font-bold text-stone-900 mb-2">
-                  {currentMenu?.title}
-                </h1>
-                {currentMenu?.subtitle && (
-                  <p className="text-stone-600 text-sm italic">{currentMenu.subtitle}</p>
-                )}
-              </div>
-
-              <div className="space-y-10">
-                {currentMenu?.categories?.map((cat: any) => (
-                  <div key={cat.id} className="space-y-6">
-                    <div className="border-b border-[#27684a]/30 pb-2">
-                      <h2 className="text-2xl font-serif font-bold text-[#27684a] uppercase tracking-wide">
-                        {cat.name}
-                      </h2>
-                      {cat.description && (
-                        <p className="text-stone-500 text-xs mt-1">{cat.description}</p>
-                      )}
-                    </div>
-
-                    <div className="space-y-5">
-                      {cat.items?.map((item: any) => (
-                        <div key={item.id} className="flex justify-between items-baseline border-b border-dotted border-stone-200 pb-3">
-                          <div className="pr-4 flex-1">
-                            <h3 className="font-serif font-semibold text-lg text-stone-900">
-                              {item.name}
-                            </h3>
-                            {item.description && (
-                              <p className="text-stone-600 text-xs italic mt-0.5">
-                                {item.description}
-                              </p>
-                            )}
-                            {item.extras && item.extras.length > 0 && (
-                              <div className="mt-1 space-y-0.5">
-                                {item.extras.map((ex: any) => (
-                                  <p key={ex.id} className="text-xs text-[#27684a] font-medium">
-                                    {ex.name} <strong className="text-stone-900">{ex.price}</strong> {ex.description && `(${ex.description})`}
-                                  </p>
-                                ))}
-                              </div>
-                            )}
-                            {item.allergens && item.allergens.length > 0 && (
-                              <p className="text-[10px] text-stone-400 mt-0.5">
-                                All. {item.allergens.join(', ')}
-                              </p>
-                            )}
-                          </div>
-                          <div className="font-serif font-bold text-lg text-[#27684a] shrink-0">
-                            {item.price ? `€${item.price}` : ''}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="text-center pt-8 border-t border-stone-200 text-[10px] text-stone-500 space-y-1">
-                <p>Ristorante La Pinetina - www.ristorantelapinetina.it</p>
-                <p>Il foglio allergeni e intolleranze è consultabile presso la cassa e sul nostro sito ufficiale.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Allergens Modal */}
       {showAllergensModal && (
