@@ -3,12 +3,14 @@ import {
   Utensils, Wine, Briefcase, Lock, Mail, ShieldCheck, 
   FileText, Code, Settings, LogOut, Check, 
   Copy, Edit3, Plus, Trash2, Search, Sparkles, AlertCircle, Eye, RefreshCw, CheckCircle2,
-  ArrowUp, ArrowDown, Star, AlertTriangle, BookOpen, Users, ChevronRight, Menu as MenuIcon, X, GripVertical, PlusCircle, Printer
+  ArrowUp, ArrowDown, Star, AlertTriangle, BookOpen, Users, ChevronRight, Menu as MenuIcon, X, GripVertical, PlusCircle, Printer,
+  EyeOff, Key, Power, Layers, FolderPlus
 } from 'lucide-react';
 
 export default function App() {
+  const isEmbed = typeof window !== 'undefined' && (new URLSearchParams(window.location.search).get('embed') === '1' || new URLSearchParams(window.location.search).get('embed') === 'true');
   const [activeTab, setActiveTab] = useState<'frontend' | 'admin'>('frontend');
-  const [adminSection, setAdminSection] = useState<'menus' | 'users' | 'new_menu' | 'export'>('menus');
+  const [adminSection, setAdminSection] = useState<'menus' | 'users' | 'new_menu' | 'embeds' | 'ai_upload'>('menus');
   const [selectedMenuType, setSelectedMenuType] = useState<string>('alla_carta');
   const [menusData, setMenusData] = useState<any>(null);
   const [allergensList, setAllergensList] = useState<any[]>([]);
@@ -24,11 +26,15 @@ export default function App() {
   // Admin auth state
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [authStep, setAuthStep] = useState<'login' | '2fa' | 'dashboard'>('login');
-  const [loginUsername, setLoginUsername] = useState('risto114_gestore');
-  const [loginPassword, setLoginPassword] = useState('Pinetina2026#Sec');
+  const [loginUsername, setLoginUsername] = useState('assistenza@arimediagroup.it');
+  const [loginPassword, setLoginPassword] = useState('?wef#cZJ*hCN^~aY');
   const [twoFactorCode, setTwoFactorCode] = useState('');
-  const [debug2FACode, setDebug2FACode] = useState('');
   const [authError, setAuthError] = useState('');
+
+  // AI document parser state
+  const [aiDocText, setAiDocText] = useState('');
+  const [aiDocLoading, setAiDocLoading] = useState(false);
+  const [aiDocSuccess, setAiDocSuccess] = useState('');
 
   // Admin edit states
   const [editingMenu, setEditingMenu] = useState<any>(null);
@@ -40,10 +46,13 @@ export default function App() {
   const [newMenuTitle, setNewMenuTitle] = useState('');
   const [newMenuSlug, setNewMenuSlug] = useState('');
 
-  // New user form state
+  // New user form state with password & auto-generation
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState('Gestore');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [copiedPassword, setCopiedPassword] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -78,7 +87,6 @@ export default function App() {
       const data = await res.json();
       if (res.ok && data.success) {
         setAuthStep('2fa');
-        if (data.debugCode) setDebug2FACode(data.debugCode);
       } else {
         setAuthError(data.error || 'Credenziali non valide');
       }
@@ -168,6 +176,122 @@ export default function App() {
     }
   };
 
+  const handleAiParseMenu = async () => {
+    if (!aiDocText.trim()) {
+      alert('Inserisci il testo estratto o incolla il contenuto del PDF/Word del menù.');
+      return;
+    }
+    setAiDocLoading(true);
+    setAiDocSuccess('');
+    try {
+      const res = await fetch('/api/ai/parse-menu', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileContent: aiDocText, menuType: selectedMenuType })
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.menu) {
+        setEditingMenu(data.menu);
+        setAiDocSuccess('Documento analizzato e strutturato con successo! I piatti sono stati caricati nell\'editor.');
+        setAdminSection('menus');
+      } else {
+        alert('Errore AI: ' + (data.error || 'Impossibile elaborare'));
+      }
+    } catch (err) {
+      alert('Errore di connessione al motore AI.');
+    } finally {
+      setAiDocLoading(false);
+    }
+  };
+
+  const handleDeleteMenu = async () => {
+    if (!menusData || Object.keys(menusData).length <= 1) {
+      alert('Non puoi eliminare l\'unico menù presente nel sistema.');
+      return;
+    }
+    const menuTitle = editingMenu?.title || selectedMenuType;
+    if (!confirm(`Sei sicuro di voler eliminare DEFINITIVAMENTE il menù "${menuTitle}"?\n\nQuesta operazione rimuoverà il menù e tutte le sue portate dal database MySQL.`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/menus/${selectedMenuType}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(`Menù "${menuTitle}" eliminato con successo!`);
+        setMenusData(data.menus);
+        const remainingKeys = Object.keys(data.menus);
+        if (remainingKeys.length > 0) {
+          setSelectedMenuType(remainingKeys[0]);
+          setEditingMenu(JSON.parse(JSON.stringify(data.menus[remainingKeys[0]])));
+        }
+      } else {
+        alert('Errore eliminazione: ' + (data.error || 'Impossibile eliminare menù'));
+      }
+    } catch (err) {
+      alert('Errore di connessione durante l\'eliminazione del menù.');
+    }
+  };
+
+  const handleAddCategory = () => {
+    if (!editingMenu) return;
+    const newCatId = 'cat_' + Date.now();
+    const cats = [...(editingMenu.categories || [])];
+    cats.push({
+      id: newCatId,
+      name: 'Nuova Categoria',
+      description: '',
+      items: [
+        {
+          id: 'item_' + Date.now(),
+          name: '',
+          description: '',
+          price: '',
+          allergens: [],
+          extras: [],
+          isFeatured: false
+        }
+      ]
+    });
+    setEditingMenu({ ...editingMenu, categories: cats });
+  };
+
+  const handleDeleteCategory = (catIndex: number) => {
+    const catName = editingMenu.categories[catIndex]?.name || 'questa categoria';
+    if (!confirm(`Sei sicuro di voler eliminare la categoria "${catName}" e tutti i piatti al suo interno?`)) {
+      return;
+    }
+    const cats = editingMenu.categories.filter((_: any, i: number) => i !== catIndex);
+    setEditingMenu({ ...editingMenu, categories: cats });
+  };
+
+  const moveCategory = (catIndex: number, direction: 'up' | 'down') => {
+    const cats = [...editingMenu.categories];
+    const targetIndex = direction === 'up' ? catIndex - 1 : catIndex + 1;
+    if (targetIndex < 0 || targetIndex >= cats.length) return;
+    const temp = cats[catIndex];
+    cats[catIndex] = cats[targetIndex];
+    cats[targetIndex] = temp;
+    setEditingMenu({ ...editingMenu, categories: cats });
+  };
+
+  const generateRandomPassword = () => {
+    const lower = 'abcdefghjkmnpqrstuvwxyz';
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const numbers = '23456789';
+    const symbols = '!@#$%&*';
+    
+    let pwd = 'Pinetina';
+    for (let i = 0; i < 2; i++) pwd += upper.charAt(Math.floor(Math.random() * upper.length));
+    for (let i = 0; i < 2; i++) pwd += lower.charAt(Math.floor(Math.random() * lower.length));
+    pwd += symbols.charAt(Math.floor(Math.random() * symbols.length));
+    for (let i = 0; i < 3; i++) pwd += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    
+    setNewUserPassword(pwd);
+    setShowPassword(true);
+  };
+
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUserName || !newUserEmail) return;
@@ -175,14 +299,23 @@ export default function App() {
       const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: newUserName, email: newUserEmail, role: newUserRole })
+        body: JSON.stringify({ 
+          username: newUserName, 
+          email: newUserEmail, 
+          role: newUserRole,
+          password: newUserPassword || undefined
+        })
       });
       const data = await res.json();
       if (res.ok && data.success) {
         setAdminUsers(data.users);
         setNewUserName('');
         setNewUserEmail('');
-        alert('Nuovo utente aggiunto con successo!');
+        setNewUserPassword('');
+        setCopiedPassword(false);
+        alert('Nuovo utente aggiunto con successo con le credenziali impostate!');
+      } else {
+        alert('Errore: ' + (data.error || 'Impossibile aggiungere utente'));
       }
     } catch (err) {
       alert('Errore aggiunta utente.');
@@ -297,18 +430,21 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fcfbf9] text-[#111827] selection:bg-[#27684a]/20 selection:text-[#27684a]">
-      {/* Luxury Header */}
-      <header className="bg-white/95 backdrop-blur-md border-b border-stone-200/80 sticky top-0 z-50 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center justify-between">
-          <div className="flex items-center space-x-4 cursor-pointer group" onClick={() => setActiveTab('frontend')}>
-            <div className="w-14 h-14 rounded-full bg-[#27684a]/10 flex items-center justify-center border border-[#27684a]/30 group-hover:scale-105 transition">
-              <Utensils className="w-7 h-7 text-[#27684a]" />
+      {/* Luxury Header (hidden in embed mode) */}
+      {!isEmbed && (
+        <header className="bg-white/95 backdrop-blur-md border-b border-stone-200/80 sticky top-0 z-50 shadow-xs">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center justify-between">
+            <div className="flex items-center space-x-4 cursor-pointer group" onClick={() => setActiveTab('frontend')}>
+              <img 
+                src="https://ristorantelapinetina.it/wp-content/uploads/2026/05/Logo_Green-V.1.svg" 
+                alt="Ristorante La Pinetina" 
+                className="h-14 w-auto object-contain transition group-hover:scale-105"
+              />
+              <div className="hidden sm:block">
+                <span className="text-[11px] uppercase tracking-[0.25em] text-[#27684a] font-bold block">Ristorante</span>
+                <span className="text-2xl font-serif font-bold text-stone-900 tracking-wide">La Pinetina</span>
+              </div>
             </div>
-            <div>
-              <span className="text-[11px] uppercase tracking-[0.25em] text-[#27684a] font-bold block">Ristorante</span>
-              <span className="text-3xl font-serif font-bold text-stone-900 tracking-wide">La Pinetina</span>
-            </div>
-          </div>
 
           <div className="hidden md:flex items-center space-x-4">
             <button
@@ -370,6 +506,7 @@ export default function App() {
           </div>
         )}
       </header>
+      )}
 
       {/* Main Content */}
       <main className="flex-1">
@@ -381,7 +518,7 @@ export default function App() {
                 <h2 className="text-3xl md:text-4xl font-serif font-bold text-stone-900">Scegli il Menù Ufficiale</h2>
               </div>
               <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-center gap-3">
-                {menusData && Object.keys(menusData).map((key) => {
+                {menusData && Object.keys(menusData).filter(key => menusData[key].isActive !== false).map((key) => {
                   const m = menusData[key];
                   return (
                     <button
@@ -401,39 +538,63 @@ export default function App() {
               </div>
             </div>
 
-            <div className="bg-white/95 backdrop-blur-md border-b border-stone-200 sticky top-24 z-40 py-3 px-4 shadow-xs">
-              <div className="max-w-5xl mx-auto flex items-center space-x-3 overflow-x-auto no-scrollbar py-1">
-                <span className="text-xs uppercase tracking-wider text-stone-400 font-bold shrink-0">Indice Portate:</span>
-                {currentMenu?.categories?.map((cat: any) => (
-                  <a
-                    key={cat.id}
-                    href={`#cat-${cat.id}`}
-                    className="text-sm font-medium text-stone-700 hover:text-white hover:bg-[#27684a] whitespace-nowrap px-4 py-2 rounded-xl transition border border-stone-200/80 bg-stone-50"
+            {currentMenu && currentMenu.isActive === false ? (
+              <div className="max-w-2xl mx-auto my-16 px-6 py-12 bg-white rounded-3xl border border-stone-200 text-center shadow-md">
+                <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4 border border-amber-200 shadow-xs">
+                  <AlertTriangle className="w-8 h-8" />
+                </div>
+                <span className="text-xs uppercase tracking-widest text-[#27684a] font-bold block mb-2">Ristorante La Pinetina</span>
+                <h2 className="text-3xl font-serif font-bold text-stone-900 mb-3">Menù Temporaneamente Disattivato</h2>
+                <p className="text-stone-600 text-sm max-w-md mx-auto mb-6 leading-relaxed">
+                  Il <strong>{currentMenu.title}</strong> è attualmente disattivato o in fase di revisione da parte della nostra cucina.
+                </p>
+                {menusData && Object.keys(menusData).some(k => menusData[k].isActive !== false) && (
+                  <button
+                    onClick={() => {
+                      const firstActive = Object.keys(menusData).find(k => menusData[k].isActive !== false);
+                      if (firstActive) setSelectedMenuType(firstActive);
+                    }}
+                    className="px-6 py-3 bg-[#27684a] hover:bg-[#1e5239] text-white rounded-xl font-semibold shadow-md transition"
                   >
-                    {cat.name}
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            <div className="max-w-4xl mx-auto px-4 py-16">
-              <div className="text-center mb-16">
-                <span className="text-[#27684a] uppercase tracking-[0.25em] text-xs font-bold block mb-3">Ristorante La Pinetina</span>
-                <h1 className="text-4xl md:text-6xl font-serif font-bold text-stone-900 mb-4 tracking-tight">
-                  {currentMenu?.title}
-                </h1>
-                {currentMenu?.seoDescription && (
-                  <p className="text-stone-600 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">{currentMenu.seoDescription}</p>
+                    Visualizza i Menù Disponibili
+                  </button>
                 )}
-                {currentMenu?.subtitle && (
-                  <div className="mt-3 inline-block bg-[#27684a]/10 text-[#27684a] font-semibold px-4 py-1.5 rounded-full text-sm">
-                    {currentMenu.subtitle}
+              </div>
+            ) : (
+              <>
+                <div className="bg-white/95 backdrop-blur-md border-b border-stone-200 sticky top-24 z-40 py-3 px-4 shadow-xs">
+                  <div className="max-w-5xl mx-auto flex items-center space-x-3 overflow-x-auto no-scrollbar py-1">
+                    <span className="text-xs uppercase tracking-wider text-stone-400 font-bold shrink-0">Indice Portate:</span>
+                    {currentMenu?.categories?.map((cat: any) => (
+                      <a
+                        key={cat.id}
+                        href={`#cat-${cat.id}`}
+                        className="text-sm font-medium text-stone-700 hover:text-white hover:bg-[#27684a] whitespace-nowrap px-4 py-2 rounded-xl transition border border-stone-200/80 bg-stone-50"
+                      >
+                        {cat.name}
+                      </a>
+                    ))}
                   </div>
-                )}
-                <div className="w-32 h-1 bg-[#27684a] mx-auto mt-6 rounded-full"></div>
-              </div>
+                </div>
 
-              <div className="space-y-16">
+                <div className="max-w-4xl mx-auto px-4 py-16">
+                  <div className="text-center mb-16">
+                    <span className="text-[#27684a] uppercase tracking-[0.25em] text-xs font-bold block mb-3">Ristorante La Pinetina</span>
+                    <h1 className="text-4xl md:text-6xl font-serif font-bold text-stone-900 mb-4 tracking-tight">
+                      {currentMenu?.title}
+                    </h1>
+                    {currentMenu?.seoDescription && (
+                      <p className="text-stone-600 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">{currentMenu.seoDescription}</p>
+                    )}
+                    {currentMenu?.subtitle && (
+                      <div className="mt-3 inline-block bg-[#27684a]/10 text-[#27684a] font-semibold px-4 py-1.5 rounded-full text-sm">
+                        {currentMenu.subtitle}
+                      </div>
+                    )}
+                    <div className="w-32 h-1 bg-[#27684a] mx-auto mt-6 rounded-full"></div>
+                  </div>
+
+                  <div className="space-y-16">
                 {currentMenu?.categories?.map((cat: any) => (
                   <div 
                     key={cat.id} 
@@ -530,9 +691,11 @@ export default function App() {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        ) : (
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
           /* Admin Backend */
           <div className="max-w-6xl mx-auto px-4 py-12">
             {!isAdminLoggedIn ? (
@@ -592,19 +755,14 @@ export default function App() {
                       </div>
                       <h2 className="text-3xl font-serif font-bold text-stone-900">Verifica 2FA</h2>
                       <p className="text-stone-500 text-sm mt-1">
-                        Codice inviato a <strong className="text-stone-800">gestore@ristorantelapinetina.it</strong>
+                        Codice inviato via e-mail a <strong className="text-stone-800">assistenza@arimediagroup.it</strong>
                       </p>
                     </div>
 
-                    {debug2FACode && (
-                      <div className="bg-amber-50 border border-amber-300 text-amber-900 p-4 rounded-xl text-sm">
-                        <p className="font-bold flex items-center space-x-1.5 mb-1">
-                          <Sparkles className="w-4 h-4 text-amber-600" />
-                          <span>Simulazione Invio E-mail:</span>
-                        </p>
-                        <p>Codice di sicurezza: <strong className="text-xl tracking-widest text-[#27684a]">{debug2FACode}</strong></p>
-                      </div>
-                    )}
+                    <div className="bg-emerald-50 border border-emerald-200 text-[#27684a] p-4 rounded-xl text-sm flex items-center space-x-2">
+                      <Mail className="w-5 h-5 shrink-0" />
+                      <span>Il codice a 6 cifre è stato inviato via e-mail protetta (SMTP). Inseriscilo qui sotto per accedere.</span>
+                    </div>
 
                     {authError && (
                       <div className="bg-red-50 text-red-700 p-4 rounded-xl text-sm flex items-center space-x-2 border border-red-200">
@@ -663,27 +821,41 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-stone-100 p-2 rounded-2xl">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 bg-stone-100 p-2 rounded-2xl">
                   <button
                     onClick={() => setAdminSection('menus')}
-                    className={`py-3 px-6 rounded-xl text-sm font-semibold transition flex items-center justify-center space-x-2 ${adminSection === 'menus' ? 'bg-[#27684a] text-white shadow-md' : 'text-stone-700 hover:bg-white/60'}`}
+                    className={`py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 ${adminSection === 'menus' ? 'bg-[#27684a] text-white shadow-md' : 'text-stone-700 hover:bg-white/60'}`}
                   >
                     <Utensils className="w-4 h-4" />
-                    <span>Modifica Menù Esistenti</span>
+                    <span>Modifica Menù</span>
                   </button>
                   <button
                     onClick={() => setAdminSection('new_menu')}
-                    className={`py-3 px-6 rounded-xl text-sm font-semibold transition flex items-center justify-center space-x-2 ${adminSection === 'new_menu' ? 'bg-[#27684a] text-white shadow-md' : 'text-stone-700 hover:bg-white/60'}`}
+                    className={`py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 ${adminSection === 'new_menu' ? 'bg-[#27684a] text-white shadow-md' : 'text-stone-700 hover:bg-white/60'}`}
                   >
                     <Plus className="w-4 h-4" />
-                    <span>Crea Nuovo Menù</span>
+                    <span>Crea Menù</span>
+                  </button>
+                  <button
+                    onClick={() => setAdminSection('embeds')}
+                    className={`py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 ${adminSection === 'embeds' ? 'bg-[#27684a] text-white shadow-md' : 'text-stone-700 hover:bg-white/60'}`}
+                  >
+                    <Code className="w-4 h-4" />
+                    <span>Incorpora & SEO</span>
+                  </button>
+                  <button
+                    onClick={() => setAdminSection('ai_upload')}
+                    className={`py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 ${adminSection === 'ai_upload' ? 'bg-[#27684a] text-white shadow-md' : 'text-stone-700 hover:bg-white/60'}`}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>Carica con AI</span>
                   </button>
                   <button
                     onClick={() => setAdminSection('users')}
-                    className={`py-3 px-6 rounded-xl text-sm font-semibold transition flex items-center justify-center space-x-2 ${adminSection === 'users' ? 'bg-[#27684a] text-white shadow-md' : 'text-stone-700 hover:bg-white/60'}`}
+                    className={`py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 ${adminSection === 'users' ? 'bg-[#27684a] text-white shadow-md' : 'text-stone-700 hover:bg-white/60'}`}
                   >
                     <Users className="w-4 h-4" />
-                    <span>Gestione Utenti (Admin)</span>
+                    <span>Utenti</span>
                   </button>
                 </div>
 
@@ -694,14 +866,30 @@ export default function App() {
                       <div className="space-y-3">
                         {menusData && Object.keys(menusData).map((key) => {
                           const m = menusData[key];
+                          const isActive = m.isActive !== false;
                           return (
                             <button
                               key={key}
                               onClick={() => { setSelectedMenuType(key); setEditingMenu(JSON.parse(JSON.stringify(m))); }}
-                              className={`w-full text-left px-5 py-4 rounded-2xl font-semibold transition flex items-center justify-between ${selectedMenuType === key ? 'bg-[#27684a] text-white shadow-md' : 'bg-stone-50 text-stone-700 hover:bg-stone-100 border border-stone-200/80'}`}
+                              className={`w-full text-left px-5 py-4 rounded-2xl font-semibold transition flex items-center justify-between ${
+                                selectedMenuType === key 
+                                  ? 'bg-[#27684a] text-white shadow-md' 
+                                  : 'bg-stone-50 text-stone-700 hover:bg-stone-100 border border-stone-200/80'
+                              }`}
                             >
-                              <span>{m.title}</span>
-                              <Utensils className="w-4 h-4" />
+                              <div className="flex items-center space-x-2.5">
+                                <span className={`w-2.5 h-2.5 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-stone-300'}`}></span>
+                                <span className="text-sm font-semibold">{m.title}</span>
+                              </div>
+                              <span className={`text-[11px] px-2.5 py-0.5 rounded-md font-medium ${
+                                selectedMenuType === key 
+                                  ? 'bg-white/20 text-white' 
+                                  : isActive 
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                                    : 'bg-stone-200 text-stone-600'
+                              }`}>
+                                {isActive ? 'Attivo' : 'Disattivato'}
+                              </span>
                             </button>
                           );
                         })}
@@ -712,7 +900,7 @@ export default function App() {
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-stone-100 pb-6 gap-4">
                         <div>
                           <h3 className="font-serif text-3xl font-bold text-stone-900">Modifica {editingMenu?.title}</h3>
-                          <p className="text-stone-500 text-xs mt-1">Trascina i prodotti, gestisci gli extra (es. Tartufo fresco) e gli allergeni.</p>
+                          <p className="text-stone-500 text-xs mt-1">Gestisci portate, categorie, piatti, allergeni ed extra.</p>
                         </div>
                         <button
                           onClick={handleSaveMenuChanges}
@@ -723,19 +911,174 @@ export default function App() {
                         </button>
                       </div>
 
-                      <div className="space-y-8">
-                        {editingMenu?.categories?.map((cat: any, catIndex: number) => (
-                          <div key={cat.id || catIndex} className="bg-stone-50/80 p-6 rounded-2xl border border-stone-200 space-y-5">
+                      {/* Menu Status (Active/Inactive) & Actions */}
+                      <div className="bg-stone-50 p-6 rounded-2xl border border-stone-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div className="flex items-center space-x-3.5">
+                          <div className={`w-4 h-4 rounded-full ${editingMenu?.isActive !== false ? 'bg-emerald-500 ring-4 ring-emerald-100' : 'bg-stone-400'}`} />
+                          <div>
+                            <span className="font-bold text-stone-900 text-sm block">
+                              Stato Menù: {editingMenu?.isActive !== false ? 'ATTIVO (Visibile al pubblico)' : 'DISATTIVATO (Nascosto al pubblico)'}
+                            </span>
+                            <span className="text-xs text-stone-500 block mt-0.5">
+                              {editingMenu?.isActive !== false 
+                                ? 'Visibile sulla barra dei menù e accessibile dagli ospiti.' 
+                                : 'Nascosto ai visitatori. I clienti vedranno l\'avviso di menù in aggiornamento.'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-3 w-full sm:w-auto">
+                          <button
+                            type="button"
+                            onClick={() => setEditingMenu({ ...editingMenu, isActive: editingMenu?.isActive === false ? true : false })}
+                            className={`px-4 py-2.5 rounded-xl font-semibold text-xs transition border flex items-center space-x-2 ${
+                              editingMenu?.isActive === false
+                                ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-xs'
+                                : 'bg-white hover:bg-stone-100 text-stone-700 border-stone-300'
+                            }`}
+                          >
+                            <Power className="w-3.5 h-3.5" />
+                            <span>{editingMenu?.isActive === false ? 'Attiva Menù' : 'Disattiva Menù'}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={handleDeleteMenu}
+                            className="px-4 py-2.5 rounded-xl font-semibold text-xs bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition flex items-center space-x-2"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Elimina Menù</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Menu Info & Included Description */}
+                      <div className="bg-stone-50 p-6 rounded-2xl border border-stone-200 space-y-4">
+                        <div className="flex items-center space-x-2 text-stone-800 font-semibold text-sm">
+                          <Settings className="w-4 h-4 text-[#27684a]" />
+                          <span>Dettagli e Note Incluse del Menù</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1">Titolo Menù</label>
                             <input
                               type="text"
-                              value={cat.name}
-                              onChange={(e) => {
-                                const cats = [...editingMenu.categories];
-                                cats[catIndex].name = e.target.value;
-                                setEditingMenu({ ...editingMenu, categories: cats });
-                              }}
-                              className="font-serif font-bold text-xl text-[#27684a] bg-white px-4 py-2.5 rounded-xl border border-stone-300 w-full outline-none shadow-2xs"
+                              value={editingMenu?.title || ''}
+                              onChange={(e) => setEditingMenu({ ...editingMenu, title: e.target.value })}
+                              className="w-full bg-white px-4 py-2.5 rounded-xl border border-stone-300 text-sm font-semibold outline-none focus:ring-2 focus:ring-[#27684a]"
                             />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1">Cosa c'è incluso (es. INCLUSI coperto, acqua e caffè)</label>
+                            <input
+                              type="text"
+                              placeholder="es. INCLUSI coperto, acqua e caffè"
+                              value={editingMenu?.subtitle || ''}
+                              onChange={(e) => setEditingMenu({ ...editingMenu, subtitle: e.target.value })}
+                              className="w-full bg-white px-4 py-2.5 rounded-xl border border-stone-300 text-sm font-semibold outline-none focus:ring-2 focus:ring-[#27684a]"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1">Descrizione del Menù (SEO)</label>
+                          <textarea
+                            rows={2}
+                            value={editingMenu?.seoDescription || ''}
+                            onChange={(e) => setEditingMenu({ ...editingMenu, seoDescription: e.target.value })}
+                            className="w-full bg-white px-4 py-2 rounded-xl border border-stone-300 text-sm outline-none focus:ring-2 focus:ring-[#27684a]"
+                            placeholder="Descrizione visibile per i clienti e i motori di ricerca..."
+                          />
+                        </div>
+                      </div>
+
+                      {/* Categories Management Header */}
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-4 border-t border-stone-200">
+                        <div>
+                          <h4 className="font-serif text-2xl font-bold text-stone-900 flex items-center space-x-2">
+                            <Layers className="w-5 h-5 text-[#27684a]" />
+                            <span>Portate e Categorie del Menù ({editingMenu?.categories?.length || 0})</span>
+                          </h4>
+                          <p className="text-xs text-stone-500">Aggiungi nuove portate o categorie (es. Antipasti, Primi, Secondi) e organizza i piatti all'interno.</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleAddCategory}
+                          className="px-4 py-2.5 bg-[#27684a] hover:bg-[#1e5239] text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center space-x-2 shrink-0"
+                        >
+                          <PlusCircle className="w-4 h-4" />
+                          <span>+ Aggiungi Nuova Categoria</span>
+                        </button>
+                      </div>
+
+                      <div className="space-y-8">
+                        {editingMenu?.categories?.map((cat: any, catIndex: number) => (
+                          <div key={cat.id || catIndex} className="bg-stone-50/90 p-6 rounded-2xl border border-stone-200 space-y-5">
+                            {/* Category Header with Title, Description, Reorder, and Delete */}
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-stone-200">
+                              <div className="flex items-center space-x-2 flex-1 w-full">
+                                <span className="text-xs font-bold uppercase tracking-wider text-white bg-[#27684a] px-2.5 py-1 rounded-md shrink-0">
+                                  Portata {catIndex + 1}
+                                </span>
+                                <input
+                                  type="text"
+                                  placeholder="Nome Categoria (es. Antipasti, Primi Piatti)"
+                                  value={cat.name}
+                                  onChange={(e) => {
+                                    const cats = [...editingMenu.categories];
+                                    cats[catIndex].name = e.target.value;
+                                    setEditingMenu({ ...editingMenu, categories: cats });
+                                  }}
+                                  className="font-serif font-bold text-xl text-[#27684a] bg-white px-4 py-2 rounded-xl border border-stone-300 w-full outline-none shadow-2xs focus:ring-2 focus:ring-[#27684a]"
+                                />
+                              </div>
+
+                              <div className="flex items-center space-x-2 self-end sm:self-center shrink-0">
+                                <button
+                                  type="button"
+                                  title="Sposta Categoria Su"
+                                  onClick={() => moveCategory(catIndex, 'up')}
+                                  disabled={catIndex === 0}
+                                  className="p-2 rounded-lg bg-white border border-stone-200 hover:bg-stone-100 disabled:opacity-30 text-stone-700 transition"
+                                >
+                                  <ArrowUp className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  title="Sposta Categoria Giù"
+                                  onClick={() => moveCategory(catIndex, 'down')}
+                                  disabled={catIndex === editingMenu.categories.length - 1}
+                                  className="p-2 rounded-lg bg-white border border-stone-200 hover:bg-stone-100 disabled:opacity-30 text-stone-700 transition"
+                                >
+                                  <ArrowDown className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  title="Elimina questa Categoria"
+                                  onClick={() => handleDeleteCategory(catIndex)}
+                                  className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 transition flex items-center space-x-1"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  <span className="text-xs font-semibold hidden sm:inline">Elimina Categoria</span>
+                                </button>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-stone-500 uppercase tracking-wider mb-1">
+                                Descrizione o nota della portata (opzionale)
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="es. Serviti con contorno di stagione e pane fatto in casa"
+                                value={cat.description || ''}
+                                onChange={(e) => {
+                                  const cats = [...editingMenu.categories];
+                                  cats[catIndex].description = e.target.value;
+                                  setEditingMenu({ ...editingMenu, categories: cats });
+                                }}
+                                className="text-xs text-stone-700 bg-white px-4 py-2 rounded-xl border border-stone-200 w-full outline-none"
+                              />
+                            </div>
 
                             <div className="space-y-4">
                               {cat.items?.map((item: any, itemIndex: number) => (
@@ -936,6 +1279,16 @@ export default function App() {
                             </div>
                           </div>
                         ))}
+
+                        {/* Button to add another category at the bottom of the editor */}
+                        <button
+                          type="button"
+                          onClick={handleAddCategory}
+                          className="w-full py-4 bg-white hover:bg-stone-50 border-2 border-dashed border-[#27684a]/40 text-[#27684a] font-bold rounded-2xl text-sm transition flex items-center justify-center space-x-2 shadow-2xs"
+                        >
+                          <FolderPlus className="w-5 h-5" />
+                          <span>+ Aggiungi un'altra Categoria a questo Menù</span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -998,10 +1351,10 @@ export default function App() {
                         <Users className="w-7 h-7 text-[#27684a]" />
                         <span>Gestione Utenti Amministratori</span>
                       </h3>
-                      <p className="text-stone-500 text-sm">Aggiungi o rimuovi utenti autorizzati.</p>
+                      <p className="text-stone-500 text-sm">Aggiungi nuovi utenti e imposta o genera una password sicura in automatico.</p>
                     </div>
 
-                    <form onSubmit={handleAddUser} className="space-y-4 bg-stone-50 p-6 rounded-2xl border border-stone-200">
+                    <form onSubmit={handleAddUser} className="space-y-5 bg-stone-50 p-6 rounded-2xl border border-stone-200">
                       <h4 className="font-semibold text-stone-900 text-sm">Aggiungi Nuovo Utente</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -1011,7 +1364,7 @@ export default function App() {
                             value={newUserName}
                             onChange={(e) => setNewUserName(e.target.value)}
                             placeholder="mario_rossi"
-                            className="w-full px-4 py-2.5 text-sm bg-white rounded-xl border border-stone-300 outline-none"
+                            className="w-full px-4 py-2.5 text-sm bg-white rounded-xl border border-stone-300 outline-none focus:ring-2 focus:ring-[#27684a]"
                             required
                           />
                         </div>
@@ -1022,37 +1375,277 @@ export default function App() {
                             value={newUserEmail}
                             onChange={(e) => setNewUserEmail(e.target.value)}
                             placeholder="mario@ristorantelapinetina.it"
-                            className="w-full px-4 py-2.5 text-sm bg-white rounded-xl border border-stone-300 outline-none"
+                            className="w-full px-4 py-2.5 text-sm bg-white rounded-xl border border-stone-300 outline-none focus:ring-2 focus:ring-[#27684a]"
                             required
                           />
                         </div>
                       </div>
-                      <button
-                        type="submit"
-                        className="py-3 px-6 bg-[#27684a] text-white text-sm font-semibold rounded-xl hover:bg-[#1e5239] transition shadow-md"
-                      >
-                        Aggiungi Utente
-                      </button>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-stone-600 mb-1">Ruolo</label>
+                          <select
+                            value={newUserRole}
+                            onChange={(e) => setNewUserRole(e.target.value)}
+                            className="w-full px-4 py-2.5 text-sm bg-white rounded-xl border border-stone-300 outline-none focus:ring-2 focus:ring-[#27684a]"
+                          >
+                            <option value="Gestore">Gestore</option>
+                            <option value="Amministratore">Amministratore</option>
+                            <option value="Sommelier">Sommelier</option>
+                            <option value="Chef di Cucina">Chef di Cucina</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="block text-xs font-semibold text-stone-600">Password di Accesso</label>
+                            <button
+                              type="button"
+                              onClick={generateRandomPassword}
+                              className="text-xs text-[#27684a] font-bold hover:underline flex items-center space-x-1"
+                            >
+                              <Key className="w-3 h-3" />
+                              <span>⚡ Genera in automatico</span>
+                            </button>
+                          </div>
+                          <div className="relative flex items-center">
+                            <input
+                              type={showPassword ? 'text' : 'password'}
+                              value={newUserPassword}
+                              onChange={(e) => setNewUserPassword(e.target.value)}
+                              placeholder="Inserisci o genera password"
+                              className="w-full px-4 py-2.5 pr-20 text-sm bg-white rounded-xl border border-stone-300 outline-none font-mono focus:ring-2 focus:ring-[#27684a]"
+                            />
+                            <div className="absolute right-2 flex items-center space-x-1">
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="p-1.5 text-stone-400 hover:text-stone-700 rounded transition"
+                                title={showPassword ? 'Nascondi password' : 'Mostra password'}
+                              >
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                              {newUserPassword && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(newUserPassword);
+                                    setCopiedPassword(true);
+                                    setTimeout(() => setCopiedPassword(false), 2000);
+                                  }}
+                                  className="p-1.5 text-[#27684a] hover:bg-[#27684a]/10 rounded transition"
+                                  title="Copia password"
+                                >
+                                  {copiedPassword ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <span className="text-[11px] text-stone-500 block mt-1">
+                            {copiedPassword ? '✅ Password copiata negli appunti!' : 'Puoi inserire una password o cliccare su Genera.'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 flex justify-end">
+                        <button
+                          type="submit"
+                          className="py-3 px-6 bg-[#27684a] text-white text-sm font-semibold rounded-xl hover:bg-[#1e5239] transition shadow-md flex items-center space-x-2"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Aggiungi Utente con Password</span>
+                        </button>
+                      </div>
                     </form>
 
                     <div className="space-y-3">
-                      <h4 className="font-semibold text-stone-900 text-sm">Utenti Registrati</h4>
+                      <h4 className="font-semibold text-stone-900 text-sm">Utenti Registrati con Accesso</h4>
                       {adminUsers.map((u: any) => (
                         <div key={u.id} className="flex justify-between items-center p-4 bg-white rounded-2xl border border-stone-200 shadow-2xs">
                           <div>
-                            <span className="font-semibold text-stone-900 block text-base">{u.username}</span>
-                            <span className="text-xs text-stone-500">{u.email} ({u.role})</span>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-semibold text-stone-900 block text-base">{u.username}</span>
+                              <span className="text-[11px] bg-stone-100 text-stone-600 px-2 py-0.5 rounded font-medium border border-stone-200">
+                                {u.role || 'Gestore'}
+                              </span>
+                            </div>
+                            <span className="text-xs text-stone-500 block mt-0.5">{u.email}</span>
                           </div>
-                          {u.username !== 'risto114_gestore' && (
+                          {u.username !== 'assistenza@arimediagroup.it' && u.username !== 'risto114_gestore' ? (
                             <button
                               onClick={() => handleDeleteUser(u.id)}
-                              className="text-xs bg-red-50 hover:bg-red-100 text-red-600 px-3.5 py-2 rounded-xl font-semibold transition"
+                              className="text-xs bg-red-50 hover:bg-red-100 text-red-600 px-3.5 py-2 rounded-xl font-semibold transition flex items-center space-x-1"
                             >
-                              Elimina
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Elimina</span>
                             </button>
+                          ) : (
+                            <span className="text-[11px] text-stone-400 font-semibold px-2.5 py-1 bg-stone-50 rounded-lg border border-stone-200">
+                              Admin Principale
+                            </span>
                           )}
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {adminSection === 'embeds' && (
+                  <div className="max-w-4xl mx-auto bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-stone-200 space-y-8">
+                    <div>
+                      <span className="text-xs uppercase tracking-widest text-[#27684a] font-bold block mb-1">SEO & Integrazione WordPress</span>
+                      <h3 className="font-serif text-3xl font-bold text-stone-900">Codici d'Incorporamento per il Sito Ufficiale</h3>
+                      <p className="text-stone-500 text-sm mt-1">
+                        Incorpora ogni singolo menù direttamente nelle pagine dedicate del sito ufficiale con layout trasparente, responsive e Schema.org SEO integrato.
+                      </p>
+                    </div>
+
+                    <div className="space-y-6">
+                      {[
+                        { key: 'alla_carta', title: 'Menù Alla Carta', targetUrl: 'https://ristorantelapinetina.it/menu/' },
+                        { key: 'business_lunch', title: 'Menù Business Lunch', targetUrl: 'https://ristorantelapinetina.it/menu-business-lunch/' },
+                        { key: 'vini', title: 'Carta dei Vini', targetUrl: 'https://ristorantelapinetina.it/menu-vini/' }
+                      ].map((item) => {
+                        const iframeCode = `<iframe src="https://menu.ristorantelapinetina.it/?menu=${item.key}&embed=1" style="width:100%; min-height:850px; border:none; background:transparent;" title="${item.title} - Ristorante La Pinetina" loading="lazy"></iframe>`;
+                        const schemaCode = `<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Restaurant",
+  "name": "Ristorante La Pinetina",
+  "url": "https://ristorantelapinetina.it",
+  "hasMenu": {
+    "@type": "Menu",
+    "name": "${item.title}",
+    "url": "${item.targetUrl}"
+  }
+}
+</script>`;
+                        return (
+                          <div key={item.key} className="bg-stone-50 p-6 rounded-2xl border border-stone-200 space-y-4">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                              <div>
+                                <h4 className="font-serif text-xl font-bold text-[#27684a]">{item.title}</h4>
+                                <span className="text-xs text-stone-500">Pagina di destinazione: <code className="text-stone-800 font-semibold">{item.targetUrl}</code></span>
+                              </div>
+                              <a
+                                href={`https://menu.ristorantelapinetina.it/?menu=${item.key}&embed=1`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs px-3.5 py-1.5 bg-white border border-stone-300 rounded-lg text-stone-700 hover:text-[#27684a] font-medium"
+                              >
+                                Apri Anteprima Embed ↗
+                              </a>
+                            </div>
+
+                            <div>
+                              <div className="flex justify-between items-center mb-1">
+                                <label className="text-xs font-bold text-stone-700">1. Codice Iframe (da incollare nel blocco HTML di WordPress)</label>
+                                <button
+                                  onClick={() => copyToClipboard(iframeCode, 'iframe_' + item.key)}
+                                  className="text-xs font-semibold text-[#27684a] hover:underline flex items-center space-x-1"
+                                >
+                                  {copiedEmbed === 'iframe_' + item.key ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                  <span>{copiedEmbed === 'iframe_' + item.key ? 'Copiato!' : 'Copia Iframe'}</span>
+                                </button>
+                              </div>
+                              <pre className="p-3 bg-stone-900 text-stone-200 rounded-xl text-xs overflow-x-auto whitespace-pre-wrap font-mono select-all">
+                                {iframeCode}
+                              </pre>
+                            </div>
+
+                            <div>
+                              <div className="flex justify-between items-center mb-1">
+                                <label className="text-xs font-bold text-stone-700">2. Dati Strutturati SEO Schema.org (Google Rich Snippets)</label>
+                                <button
+                                  onClick={() => copyToClipboard(schemaCode, 'schema_' + item.key)}
+                                  className="text-xs font-semibold text-[#27684a] hover:underline flex items-center space-x-1"
+                                >
+                                  {copiedEmbed === 'schema_' + item.key ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                  <span>{copiedEmbed === 'schema_' + item.key ? 'Copiato!' : 'Copia Schema JSON-LD'}</span>
+                                </button>
+                              </div>
+                              <pre className="p-3 bg-stone-900 text-emerald-400 rounded-xl text-xs overflow-x-auto whitespace-pre-wrap font-mono select-all">
+                                {schemaCode}
+                              </pre>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {adminSection === 'ai_upload' && (
+                  <div className="max-w-3xl mx-auto bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-stone-200 space-y-6">
+                    <div>
+                      <span className="text-xs uppercase tracking-widest text-[#27684a] font-bold block mb-1">Intelligenza Artificiale Gemini</span>
+                      <h3 className="font-serif text-3xl font-bold text-stone-900 flex items-center space-x-2">
+                        <Sparkles className="w-7 h-7 text-[#27684a]" />
+                        <span>Caricamento ed Estrazione Automatica Documenti</span>
+                      </h3>
+                      <p className="text-stone-500 text-sm mt-1">
+                        Incolla o carica il testo estratto dal tuo PDF o file Word del menù: l'AI identificherà automaticamente categorie, nomi dei piatti, descrizioni, prezzi, extra e allergeni UE aggiornando la struttura in tempo reale.
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1.5">
+                          Menù di Destinazione per il caricamento
+                        </label>
+                        <select
+                          value={selectedMenuType}
+                          onChange={(e) => {
+                            setSelectedMenuType(e.target.value);
+                            if (menusData && menusData[e.target.value]) {
+                              setEditingMenu(JSON.parse(JSON.stringify(menusData[e.target.value])));
+                            }
+                          }}
+                          className="w-full bg-stone-50 border border-stone-300 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-[#27684a]"
+                        >
+                          {menusData && Object.keys(menusData).map((k) => (
+                            <option key={k} value={k}>{menusData[k]?.title || k}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1.5">
+                          Contenuto Documento (PDF / Word / Testo Menù)
+                        </label>
+                        <textarea
+                          rows={8}
+                          value={aiDocText}
+                          onChange={(e) => setAiDocText(e.target.value)}
+                          placeholder="Incolla qui il testo del tuo menù PDF o Word (es. Antipasti, Primi, Secondi con ingredienti e prezzi)..."
+                          className="w-full bg-stone-50 border border-stone-300 rounded-2xl p-4 text-sm font-mono outline-none focus:ring-2 focus:ring-[#27684a]"
+                        />
+                      </div>
+
+                      {aiDocSuccess && (
+                        <div className="bg-emerald-50 text-emerald-800 p-4 rounded-xl border border-emerald-200 text-sm flex items-center space-x-2">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                          <span>{aiDocSuccess}</span>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={handleAiParseMenu}
+                        disabled={aiDocLoading}
+                        className="w-full py-4 bg-[#27684a] hover:bg-[#1e5239] disabled:opacity-60 text-white font-semibold rounded-2xl shadow-lg transition flex items-center justify-center space-x-2 text-base"
+                      >
+                        {aiDocLoading ? (
+                          <>
+                            <RefreshCw className="w-5 h-5 animate-spin" />
+                            <span>Analisi ed Estrazione AI in corso...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-5 h-5" />
+                            <span>Elabora e Inserisci nel Menù con AI</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
                 )}
@@ -1192,19 +1785,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Footer */}
-      <footer className="bg-stone-900 text-stone-400 py-12 px-4 border-t border-stone-800 mt-20">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
-          <div>
-            <h3 className="font-serif text-2xl font-bold text-white mb-1">Ristorante La Pinetina</h3>
-            <p className="text-xs text-stone-400">Generatore Menù Digitali SEO Oriented & Backend PHP</p>
-          </div>
-          <div className="text-xs text-stone-500 space-y-1">
-            <p>Database: <code className="text-stone-300">risto114_menu</code> | Utente: <code className="text-stone-300">risto114_gestore</code></p>
-            <p>Subdomain: <code className="text-stone-300">http://menu.ristorantelapinetina.it/</code></p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

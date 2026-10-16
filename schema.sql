@@ -23,8 +23,9 @@ CREATE TABLE IF NOT EXISTS admin_users (
 );
 
 INSERT INTO admin_users (username, password_hash, email, role) 
-VALUES ('risto114_gestore', '$2y$10$EXAMPLEHASHSECURE', 'gestore@ristorantelapinetina.it', 'Super Admin')
-ON DUPLICATE KEY UPDATE id=id;
+VALUES ('assistenza@arimediagroup.it', '$2y$10$EXAMPLEHASHSECURE', 'assistenza@arimediagroup.it', 'Super Admin'),
+       ('risto114_gestore', '$2y$10$EXAMPLEHASHSECURE', 'assistenza@arimediagroup.it', 'Gestore')
+ON DUPLICATE KEY UPDATE email=VALUES(email);
 
 -- Inserimento dati iniziali Menù alla Carta
 INSERT INTO menus (menu_key, title, seo_title, seo_description, content_json) 

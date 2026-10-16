@@ -9,6 +9,7 @@ session_start();
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="https://ristorantelapinetina.it/wp-content/uploads/2026/05/Logo_Green-V.1.svg" />
     <title>Ristorante La Pinetina | Menù Digitali</title>
     <meta name="description" content="Scopri i menù digitali di Ristorante La Pinetina: Menù Alla Carta, Business Lunch e Carta dei Vini." />
     <meta property="og:title" content="Ristorante La Pinetina | Menù Digitali" />
@@ -18,8 +19,8 @@ session_start();
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="assets/index-Dc6Bn7Y7.js"></script>
-    <link rel="stylesheet" crossorigin href="assets/index-B7MMMRsT.css">
+    <script type="module" crossorigin src="assets/index-DWmlxEdk.js"></script>
+    <link rel="stylesheet" crossorigin href="assets/index-9hYKzJtu.css">
   </head>
   <body>
     <div id="root"></div>
