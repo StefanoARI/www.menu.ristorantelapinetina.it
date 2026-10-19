@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import nodemailer from 'nodemailer';
 import { fullWineMenu } from './src/data/wineData.js';
+import { fullBusinessLunchMenu } from './src/data/businessLunchData.js';
 
 dotenv.config();
 
@@ -192,24 +193,7 @@ let menuData: Record<string, any> = {
       }
     ]
   },
-  business_lunch: {
-    title: "Menù Business Lunch",
-    slug: "menu-business-lunch",
-    seoTitle: "Menù Business Lunch | Ristorante La Pinetina",
-    seoDescription: "Il menù business lunch ideale per le tue pause pranzo di lavoro dal lunedì al venerdì.",
-    subtitle: "INCLUSI coperto, acqua e caffè",
-    categories: [
-      {
-        id: "primo_scelta",
-        name: "MENÙ PRIMO (a scelta)",
-        description: "Inclusi coperto, acqua e caffè",
-        items: [
-          { id: "bl1", name: "Spaghetto al pomodoro", description: "con cipolla rossa e briciole di bacon", price: "12.00", isFeatured: false, extras: [] },
-          { id: "bl2", name: "Orecchiette", description: "con salmone e pesto di basilico", price: "12.00", isFeatured: true, extras: [] }
-        ]
-      }
-    ]
-  },
+  business_lunch: fullBusinessLunchMenu,
   vini: fullWineMenu
 };
 

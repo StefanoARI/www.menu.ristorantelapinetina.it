@@ -7,6 +7,7 @@ import {
   EyeOff, Key, Power, Layers, FolderPlus, Sparkles
 } from 'lucide-react';
 import { fullWineMenu } from './data/wineData';
+import { fullBusinessLunchMenu } from './data/businessLunchData';
 
 export default function App() {
   const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -89,6 +90,11 @@ export default function App() {
       // Assicura che la Carta dei Vini contenga tutte le 12 categorie complete
       if (!loadedMenus.vini || !loadedMenus.vini.categories || loadedMenus.vini.categories.length < 5) {
         loadedMenus.vini = fullWineMenu;
+      }
+
+      // Assicura che il Menù Business Lunch contenga tutte le categorie e prodotti della settimana
+      if (!loadedMenus.business_lunch || !loadedMenus.business_lunch.categories || loadedMenus.business_lunch.categories.length < 5) {
+        loadedMenus.business_lunch = fullBusinessLunchMenu;
       }
 
       setMenusData(loadedMenus);
