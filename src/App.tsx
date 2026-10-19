@@ -33,8 +33,9 @@ export default function App() {
   // Admin auth state with 24-hour persistent session
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [authStep, setAuthStep] = useState<'login' | '2fa' | 'dashboard'>('login');
-  const [loginUsername, setLoginUsername] = useState('assistenza@arimediagroup.it');
-  const [loginPassword, setLoginPassword] = useState('?wef#cZJ*hCN^~aY');
+  const [loginUsername, setLoginUsername] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [authError, setAuthError] = useState('');
 
@@ -214,6 +215,9 @@ export default function App() {
     setIsAdminLoggedIn(false);
     setAuthStep('login');
     setTwoFactorCode('');
+    setLoginUsername('');
+    setLoginPassword('');
+    setShowLoginPassword(false);
     localStorage.removeItem('pinetina_admin_session');
   };
 
@@ -872,25 +876,49 @@ export default function App() {
                     )}
 
                     <div>
-                      <label className="block text-sm font-semibold text-stone-700 mb-1.5">Username Gestore</label>
+                      <label htmlFor="admin-username" className="block text-sm font-semibold text-stone-700 mb-1.5">
+                        Username o Email Gestore
+                      </label>
                       <input 
+                        id="admin-username"
+                        name="username"
                         type="text" 
+                        autoComplete="username"
                         value={loginUsername} 
                         onChange={(e) => setLoginUsername(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl border border-stone-300 outline-none focus:ring-2 focus:ring-[#27684a]"
+                        placeholder="Inserisci username o email"
+                        className="w-full px-4 py-3 rounded-xl border border-stone-300 outline-none focus:ring-2 focus:ring-[#27684a] bg-stone-50/50 text-stone-900 transition"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-stone-700 mb-1.5">Password</label>
-                      <input 
-                        type="password" 
-                        value={loginPassword} 
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl border border-stone-300 outline-none focus:ring-2 focus:ring-[#27684a]"
-                        required
-                      />
+                      <div className="flex justify-between items-center mb-1.5">
+                        <label htmlFor="admin-password" className="block text-sm font-semibold text-stone-700">
+                          Password
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setShowLoginPassword(!showLoginPassword)}
+                          className="text-xs text-[#27684a] hover:underline flex items-center space-x-1 cursor-pointer"
+                        >
+                          {showLoginPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          <span>{showLoginPassword ? 'Nascondi' : 'Mostra password'}</span>
+                        </button>
+                      </div>
+                      <div className="relative">
+                        <input 
+                          id="admin-password"
+                          name="password"
+                          type={showLoginPassword ? 'text' : 'password'} 
+                          autoComplete="current-password"
+                          value={loginPassword} 
+                          onChange={(e) => setLoginPassword(e.target.value)}
+                          placeholder="Inserisci la tua password"
+                          className="w-full px-4 py-3 rounded-xl border border-stone-300 outline-none focus:ring-2 focus:ring-[#27684a] bg-stone-50/50 text-stone-900 transition"
+                          required
+                        />
+                      </div>
                     </div>
 
                     <button
