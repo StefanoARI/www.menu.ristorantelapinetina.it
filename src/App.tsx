@@ -26,7 +26,6 @@ export default function App() {
 
   // Active category on scroll and sticky bar state
   const [activeCategory, setActiveCategory] = useState<string>('');
-  const [showScrollTop, setShowScrollTop] = useState(false);
   const categoryNavRef = useRef<HTMLDivElement>(null);
 
   // Drag and drop state
@@ -127,11 +126,9 @@ export default function App() {
     }
   };
 
-  // Scroll Spy: rileva automaticamente la portata attualmente visibile nello scroll e gestisce pulsante Torna Su
+  // Scroll Spy: rileva automaticamente la portata attualmente visibile nello scroll
   useEffect(() => {
     const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 300);
-
       if (activeTab === 'frontend' && currentMenu?.categories?.length) {
         const scrollPosition = window.scrollY + 140;
         const categories = currentMenu.categories;
@@ -1080,39 +1077,39 @@ export default function App() {
               </div>
 
               {/* Frontend Footer with Official Sponsor Notice & Socials */}
-              <footer className="mt-14 pt-8 pb-14 border-t border-stone-300/60 text-center text-xs text-stone-500">
+              <footer className="mt-14 pt-8 pb-14 border-t border-white/20 text-center text-xs text-white">
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mb-3">
-                  <span className="font-serif font-bold text-stone-800 text-sm">Ristorante La Pinetina</span>
-                  <span className="hidden sm:inline text-stone-300">•</span>
-                  <span>Menù Digitale Ufficiale</span>
-                  <span className="hidden sm:inline text-stone-300">•</span>
+                  <span className="font-serif font-bold text-white text-base tracking-wide">Ristorante La Pinetina</span>
+                  <span className="hidden sm:inline text-white/70">•</span>
+                  <span className="text-white font-medium">Menù Digitale Ufficiale</span>
+                  <span className="hidden sm:inline text-white/70">•</span>
                   <a 
                     href="https://www.arimediagroup.it/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center space-x-2 text-stone-700 hover:text-[#27684a] font-semibold transition"
+                    className="inline-flex items-center space-x-2 text-white hover:text-white/80 font-bold transition group"
                     title="Visita ARI Media Group"
                   >
                     <span>Sponsored by ARI Media Group</span>
-                    <div className="h-5 px-1.5 py-0.5 bg-white rounded border border-stone-200 inline-flex items-center">
+                    <div className="h-5 px-1.5 py-0.5 bg-white rounded border border-white/40 shadow-xs inline-flex items-center">
                       <img 
                         src="https://www.arimediagroup.it/wp-content/uploads/2020/11/AriMediaGroup_Logo.png" 
                         alt="ARI Media Group" 
                         className="h-3.5 w-auto object-contain"
                       />
                     </div>
-                    <ExternalLink className="w-3 h-3 text-stone-400" />
+                    <ExternalLink className="w-3.5 h-3.5 text-white" />
                   </a>
                 </div>
 
                 {/* ARI Social Links in Footer */}
                 <div className="flex items-center justify-center space-x-2.5 mb-4">
-                  <span className="text-[11px] text-stone-400 uppercase tracking-wider font-semibold">Segui ARI:</span>
+                  <span className="text-[11px] text-white uppercase tracking-wider font-bold">Segui ARI:</span>
                   <a
                     href="https://www.facebook.com/arimediagroup.it/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-1.5 rounded-lg bg-stone-100 hover:bg-[#1877F2]/10 text-stone-500 hover:text-[#1877F2] transition border border-stone-200"
+                    className="p-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white transition border border-white/30"
                     title="Facebook - ARI Media Group"
                     aria-label="Facebook"
                   >
@@ -1125,7 +1122,7 @@ export default function App() {
                     href="https://www.tiktok.com/@arimediagroup?lang=it-IT"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-black transition border border-stone-200"
+                    className="p-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white transition border border-white/30"
                     title="TikTok - ARI Media Group"
                     aria-label="TikTok"
                   >
@@ -1138,7 +1135,7 @@ export default function App() {
                     href="https://www.instagram.com/arimediagroup.it/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-1.5 rounded-lg bg-stone-100 hover:bg-[#E4405F]/10 text-stone-500 hover:text-[#E4405F] transition border border-stone-200"
+                    className="p-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white transition border border-white/30"
                     title="Instagram - ARI Media Group"
                     aria-label="Instagram"
                   >
@@ -1148,7 +1145,7 @@ export default function App() {
                   </a>
                 </div>
 
-                <p className="text-stone-400 text-[11px]">
+                <p className="text-white text-xs font-normal">
                   Tutti i diritti riservati © {new Date().getFullYear()} Ristorante La Pinetina & ARI Media Group
                 </p>
               </footer>
@@ -2087,18 +2084,6 @@ export default function App() {
             </button>
           </div>
         </div>
-      )}
-      {/* Floating Action Button: Torna in Cima allo scroll per mobile e desktop */}
-      {showScrollTop && activeTab === 'frontend' && (
-        <button
-          type="button"
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-6 right-6 z-40 p-3.5 sm:p-4 bg-[#27684a] text-white rounded-full shadow-2xl hover:bg-[#1e5239] transition-all transform hover:scale-110 active:scale-95 flex items-center justify-center border-2 border-white/90 cursor-pointer"
-          title="Torna all'inizio del menù"
-          aria-label="Torna in cima"
-        >
-          <ArrowUp className="w-5 h-5 sm:w-6 sm:h-6" />
-        </button>
       )}
 
     </div>
