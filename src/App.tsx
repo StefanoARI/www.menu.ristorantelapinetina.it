@@ -4,10 +4,11 @@ import {
   FileText, Code, Settings, LogOut, Check, 
   Copy, Edit3, Plus, Trash2, Search, AlertCircle, Eye, RefreshCw, CheckCircle2,
   ArrowUp, ArrowDown, Star, AlertTriangle, BookOpen, Users, ChevronLeft, ChevronRight, Menu as MenuIcon, X, GripVertical, PlusCircle,
-  EyeOff, Key, Power, Layers, FolderPlus, Sparkles
+  EyeOff, Key, Power, Layers, FolderPlus, Sparkles, ExternalLink
 } from 'lucide-react';
 import { fullWineMenu } from './data/wineData';
 import { fullBusinessLunchMenu } from './data/businessLunchData';
+import { fullAllaCartaMenu } from './data/allaCartaData';
 
 export default function App() {
   const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -87,6 +88,11 @@ export default function App() {
       const data = await res.json();
       const loadedMenus = data.menus || {};
       
+      // Assicura che il Menù Alla Carta contenga tutte le portate e categorie autunnali complete (Pag. 0001 - 0004)
+      if (!loadedMenus.alla_carta || !loadedMenus.alla_carta.categories || loadedMenus.alla_carta.categories.length < 5) {
+        loadedMenus.alla_carta = fullAllaCartaMenu;
+      }
+
       // Assicura che la Carta dei Vini contenga tutte le 12 categorie complete
       if (!loadedMenus.vini || !loadedMenus.vini.categories || loadedMenus.vini.categories.length < 5) {
         loadedMenus.vini = fullWineMenu;
@@ -98,7 +104,7 @@ export default function App() {
       }
 
       setMenusData(loadedMenus);
-      setAllergensList(data.allergens);
+      setAllergensList(data.allergens || []);
       setAdminUsers(data.users || []);
       const menuToSelect = (loadedMenus && loadedMenus[initialMenuKey]) ? initialMenuKey : (loadedMenus && Object.keys(loadedMenus)[0] ? Object.keys(loadedMenus)[0] : 'alla_carta');
       setSelectedMenuType(menuToSelect);
@@ -108,6 +114,15 @@ export default function App() {
       setLoading(false);
     } catch (err) {
       console.error('Error fetching data:', err);
+      // Fallback robusto con tutti i menù ufficiali completi
+      const fallbackMenus = {
+        alla_carta: fullAllaCartaMenu,
+        business_lunch: fullBusinessLunchMenu,
+        vini: fullWineMenu
+      };
+      setMenusData(fallbackMenus);
+      setSelectedMenuType('alla_carta');
+      setEditingMenu(JSON.parse(JSON.stringify(fullAllaCartaMenu)));
       setLoading(false);
     }
   };
@@ -526,7 +541,29 @@ export default function App() {
               </div>
             </div>
 
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-3">
+            {/* Sponsored by ARI Media Group - Desktop */}
+            <a
+              href="https://www.arimediagroup.it/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-2.5 px-3.5 py-2 rounded-xl bg-stone-50 hover:bg-stone-100 border border-stone-200 transition group shadow-2xs hover:shadow-xs"
+              title="Sponsored by ARI Media Group - Visita il sito"
+            >
+              <div className="flex flex-col text-right">
+                <span className="text-[9px] uppercase tracking-wider text-stone-400 font-bold leading-tight">Sponsored by</span>
+                <span className="text-xs font-bold text-stone-800 group-hover:text-[#27684a] transition">ARI Media Group</span>
+              </div>
+              <div className="h-7 px-1.5 py-0.5 bg-white rounded-md border border-stone-200/90 flex items-center justify-center">
+                <img 
+                  src="https://www.arimediagroup.it/wp-content/uploads/2020/11/AriMediaGroup_Logo.png" 
+                  alt="ARI Media Group Logo" 
+                  className="h-5 w-auto object-contain"
+                />
+              </div>
+              <ExternalLink className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#27684a] transition" />
+            </a>
+
             <button
               onClick={() => setShowAllergensModal(true)}
               className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-sm font-medium transition border border-stone-200/60 shadow-xs"
@@ -558,6 +595,23 @@ export default function App() {
           </div>
 
           <div className="flex md:hidden items-center space-x-2">
+            {/* Sponsored by ARI Media Group - Mobile Header Mini Badge */}
+            <a
+              href="https://www.arimediagroup.it/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-1.5 p-1.5 rounded-xl bg-stone-50 border border-stone-200"
+              title="Sponsored by ARI Media Group"
+            >
+              <div className="h-7 px-1.5 py-0.5 bg-white rounded border border-stone-200 flex items-center justify-center">
+                <img 
+                  src="https://www.arimediagroup.it/wp-content/uploads/2020/11/AriMediaGroup_Logo.png" 
+                  alt="ARI Media Group" 
+                  className="h-4.5 w-auto object-contain"
+                />
+              </div>
+            </a>
+
             <button
               onClick={() => setShowAllergensModal(true)}
               className="p-2.5 rounded-xl bg-stone-100 text-stone-700"
@@ -576,6 +630,71 @@ export default function App() {
 
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-b border-stone-200 px-4 py-4 space-y-3">
+            {/* Mobile Sponsor Link */}
+            <div className="bg-stone-50 border border-stone-200 rounded-2xl p-3 space-y-2.5">
+              <a
+                href="https://www.arimediagroup.it/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-between transition group"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="h-9 px-2.5 py-1 bg-white rounded-lg border border-stone-200 flex items-center justify-center">
+                    <img 
+                      src="https://www.arimediagroup.it/wp-content/uploads/2020/11/AriMediaGroup_Logo.png" 
+                      alt="ARI Media Group Logo" 
+                      className="h-6 w-auto object-contain"
+                    />
+                  </div>
+                  <div className="text-left">
+                    <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold block">Sponsored by</span>
+                    <span className="text-xs font-bold text-stone-800 group-hover:text-[#27684a]">ARI Media Group</span>
+                  </div>
+                </div>
+                <ExternalLink className="w-4 h-4 text-stone-400 group-hover:text-[#27684a]" />
+              </a>
+
+              {/* Mobile Social Links */}
+              <div className="flex items-center justify-between pt-2 border-t border-stone-200/80">
+                <span className="text-[10px] text-stone-400 font-semibold uppercase tracking-wider">Social:</span>
+                <div className="flex items-center space-x-2">
+                  <a
+                    href="https://www.facebook.com/arimediagroup.it/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-lg bg-white hover:bg-[#1877F2]/10 text-stone-600 hover:text-[#1877F2] transition border border-stone-200"
+                    title="Facebook"
+                  >
+                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                  </a>
+                  <a
+                    href="https://www.tiktok.com/@arimediagroup?lang=it-IT"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-lg bg-white hover:bg-stone-200 text-stone-600 hover:text-black transition border border-stone-200"
+                    title="TikTok"
+                  >
+                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z"/>
+                    </svg>
+                  </a>
+                  <a
+                    href="https://www.instagram.com/arimediagroup.it/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-lg bg-white hover:bg-[#E4405F]/10 text-stone-600 hover:text-[#E4405F] transition border border-stone-200"
+                    title="Instagram"
+                  >
+                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+
             <button
               onClick={() => { setActiveTab(activeTab === 'frontend' ? 'admin' : 'frontend'); setMobileMenuOpen(false); }}
               className="w-full py-3 bg-[#27684a] text-white rounded-xl text-sm font-semibold flex items-center justify-center space-x-2 shadow-sm"
@@ -673,6 +792,29 @@ export default function App() {
                         {currentMenu.subtitle}
                       </div>
                     )}
+                    
+                    {/* Sponsored by ARI Media Group Hero Badge */}
+                    <div className="mt-5 flex items-center justify-center">
+                      <a
+                        href="https://www.arimediagroup.it/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center space-x-2.5 px-4 py-1.5 rounded-full bg-stone-50 hover:bg-white border border-stone-200/90 shadow-2xs hover:shadow-md transition-all group"
+                        title="Sponsored by ARI Media Group - Visita il sito"
+                      >
+                        <span className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold">Sponsored by</span>
+                        <div className="h-6 px-1.5 py-0.5 bg-white rounded border border-stone-200 flex items-center justify-center">
+                          <img 
+                            src="https://www.arimediagroup.it/wp-content/uploads/2020/11/AriMediaGroup_Logo.png" 
+                            alt="ARI Media Group" 
+                            className="h-4.5 w-auto object-contain"
+                          />
+                        </div>
+                        <span className="text-xs font-bold text-stone-900 group-hover:text-[#27684a] transition">ARI Media Group</span>
+                        <ExternalLink className="w-3 h-3 text-stone-400 group-hover:text-[#27684a] transition" />
+                      </a>
+                    </div>
+
                     <div className="w-20 sm:w-24 h-1 bg-[#27684a] mx-auto mt-4 sm:mt-6 rounded-full"></div>
                   </div>
                 </div>
@@ -752,7 +894,6 @@ export default function App() {
                       <BookOpen className="w-3.5 h-3.5 text-[#27684a]" />
                       <span className="hidden lg:inline">Allergeni</span>
                     </button>
-
                   </div>
                 </div>
 
@@ -778,23 +919,13 @@ export default function App() {
                       {cat.items?.map((item: any) => (
                         <div 
                           key={item.id} 
-                          className={`flex flex-col md:flex-row md:items-baseline justify-between p-5 rounded-2xl transition border ${
-                            item.isFeatured 
-                              ? 'bg-amber-50/70 border-amber-300/80 shadow-sm' 
-                              : 'bg-stone-50/60 border-stone-200/60 hover:bg-white hover:border-stone-300'
-                          }`}
+                          className="flex flex-col md:flex-row md:items-baseline justify-between p-5 rounded-2xl transition border bg-stone-50/60 border-stone-200/60 hover:bg-white hover:border-stone-300"
                         >
                           <div className="pr-4 flex-1 mb-3 md:mb-0">
                             <div className="flex flex-wrap items-center gap-2 mb-1.5">
                               <h3 className="text-xl md:text-2xl font-serif font-bold text-stone-900">
                                 {item.name}
                               </h3>
-                              {item.isFeatured && (
-                                <span className="inline-flex items-center space-x-1 text-[11px] bg-amber-500 text-white font-bold px-3 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
-                                  <Star className="w-3.5 h-3.5 fill-white text-white" />
-                                  <span>Consigliato dallo Chef</span>
-                                </span>
-                              )}
                             </div>
                             {item.description && (
                               <p className="text-stone-600 text-sm md:text-base leading-relaxed mb-2">
@@ -834,19 +965,112 @@ export default function App() {
                 ))}
               </div>
 
-              <div className="mt-16 bg-white border border-stone-300/80 rounded-3xl p-8 shadow-sm text-sm text-stone-600 leading-relaxed">
+              {/* Dedicated Showcase Sponsor Banner */}
+              <div className="mt-14 bg-gradient-to-br from-white via-stone-50 to-emerald-50/40 border border-stone-200/90 rounded-3xl p-6 sm:p-8 md:p-10 shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-[#27684a]/5 rounded-bl-full pointer-events-none"></div>
+                <div className="flex flex-col lg:flex-row items-center justify-between gap-6 relative z-10">
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left space-y-4 sm:space-y-0 sm:space-x-6">
+                    <a 
+                      href="https://www.arimediagroup.it/" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="p-3.5 bg-white rounded-2xl border border-stone-200 shadow-sm hover:shadow-md transition shrink-0 group block"
+                      title="ARI Media Group - Visita il sito web"
+                    >
+                      <img 
+                        src="https://www.arimediagroup.it/wp-content/uploads/2020/11/AriMediaGroup_Logo.png" 
+                        alt="ARI Media Group Logo" 
+                        className="h-10 sm:h-12 w-auto object-contain group-hover:scale-105 transition"
+                      />
+                    </a>
+                    <div>
+                      <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#27684a]/10 text-[#27684a] text-[11px] font-bold uppercase tracking-wider mb-2">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Official Partner & Sponsor</span>
+                      </div>
+                      <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
+                        Sponsored by ARI Media Group
+                      </h3>
+                      
+                      {/* Social Links for ARI Media Group */}
+                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 mt-3">
+                        <span className="text-xs font-semibold text-stone-400 mr-1">Canali Ufficiali:</span>
+                        
+                        {/* Facebook */}
+                        <a
+                          href="https://www.facebook.com/arimediagroup.it/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-700 hover:text-[#1877F2] hover:border-[#1877F2]/40 hover:bg-[#1877F2]/5 shadow-2xs transition text-xs font-semibold"
+                          title="ARI Media Group su Facebook"
+                        >
+                          <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                          </svg>
+                          <span>Facebook</span>
+                        </a>
+
+                        {/* TikTok */}
+                        <a
+                          href="https://www.tiktok.com/@arimediagroup?lang=it-IT"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-700 hover:text-black hover:border-stone-400 hover:bg-stone-100 shadow-2xs transition text-xs font-semibold"
+                          title="ARI Media Group su TikTok"
+                        >
+                          <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z"/>
+                          </svg>
+                          <span>TikTok</span>
+                        </a>
+
+                        {/* Instagram */}
+                        <a
+                          href="https://www.instagram.com/arimediagroup.it/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-700 hover:text-[#E4405F] hover:border-[#E4405F]/40 hover:bg-[#E4405F]/5 shadow-2xs transition text-xs font-semibold"
+                          title="ARI Media Group su Instagram"
+                        >
+                          <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                          </svg>
+                          <span>Instagram</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <a
+                    href="https://www.arimediagroup.it/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center space-x-2 px-6 py-3.5 rounded-xl bg-[#27684a] hover:bg-[#1e5239] text-white text-sm font-semibold shadow-md hover:shadow-lg transition shrink-0 cursor-pointer"
+                  >
+                    <span>Visita arimediagroup.it</span>
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+
+              <div className="mt-8 bg-white border border-stone-300/80 rounded-3xl p-8 shadow-sm text-sm text-stone-600 leading-relaxed">
                 <div className="flex items-start space-x-3">
                   <div className="p-2 rounded-xl bg-amber-100 text-amber-800 shrink-0 mt-1">
                     <AlertTriangle className="w-5 h-5" />
                   </div>
-                  <div>
+                  <div className="space-y-3 flex-1">
                     <h4 className="font-serif text-lg font-bold text-stone-900 mb-1">Note sulla sicurezza alimentare e allergeni</h4>
-                    <p className="text-stone-600 text-sm mb-4">
-                      Il regolamento Europeo ha individuato i 14 allergeni alimentari principali. I numeri indicati accanto ai piatti fanno riferimento alla lista ufficiale consultabile in qualsiasi momento tramite il pulsante in alto.
+                    <p className="text-stone-600 text-sm leading-relaxed">
+                      Informiamo la gentile clientela che nelle preparazioni sono presenti ingredienti che possono causare allergie e/o intolleranze alimentari. Il foglio allergeni è possibile consultarlo presso la cassa del ristorante, tramite il pulsante sottostante o su richiesta al personale di sala.
                     </p>
+                    <div className="text-xs text-stone-500 bg-stone-50 p-4 rounded-xl border border-stone-200/80 space-y-1.5">
+                      <p><strong>(*)</strong> Indica un prodotto surgelato all'origine.</p>
+                      <p><strong>(**)</strong> Indica che l'alimento è stato sottoposto ad abbattimento rapido, congelato presso la nostra cucina al fine di garantire qualità e sicurezza, conforme alla normativa vigente.</p>
+                      <p><strong>(***)</strong> Il pesce destinato ad essere consumato crudo è sottoposto a trattamento di bonifica preventiva.</p>
+                    </div>
                     <button
                       onClick={() => setShowAllergensModal(true)}
-                      className="inline-flex items-center space-x-2 text-sm font-semibold text-[#27684a] hover:underline"
+                      className="inline-flex items-center space-x-2 text-sm font-semibold text-[#27684a] hover:underline pt-1"
                     >
                       <BookOpen className="w-4 h-4" />
                       <span>Apri Tabella Completa 14 Allergeni UE</span>
@@ -854,6 +1078,80 @@ export default function App() {
                   </div>
                 </div>
               </div>
+
+              {/* Frontend Footer with Official Sponsor Notice & Socials */}
+              <footer className="mt-14 pt-8 pb-14 border-t border-stone-300/60 text-center text-xs text-stone-500">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mb-3">
+                  <span className="font-serif font-bold text-stone-800 text-sm">Ristorante La Pinetina</span>
+                  <span className="hidden sm:inline text-stone-300">•</span>
+                  <span>Menù Digitale Ufficiale</span>
+                  <span className="hidden sm:inline text-stone-300">•</span>
+                  <a 
+                    href="https://www.arimediagroup.it/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center space-x-2 text-stone-700 hover:text-[#27684a] font-semibold transition"
+                    title="Visita ARI Media Group"
+                  >
+                    <span>Sponsored by ARI Media Group</span>
+                    <div className="h-5 px-1.5 py-0.5 bg-white rounded border border-stone-200 inline-flex items-center">
+                      <img 
+                        src="https://www.arimediagroup.it/wp-content/uploads/2020/11/AriMediaGroup_Logo.png" 
+                        alt="ARI Media Group" 
+                        className="h-3.5 w-auto object-contain"
+                      />
+                    </div>
+                    <ExternalLink className="w-3 h-3 text-stone-400" />
+                  </a>
+                </div>
+
+                {/* ARI Social Links in Footer */}
+                <div className="flex items-center justify-center space-x-2.5 mb-4">
+                  <span className="text-[11px] text-stone-400 uppercase tracking-wider font-semibold">Segui ARI:</span>
+                  <a
+                    href="https://www.facebook.com/arimediagroup.it/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-lg bg-stone-100 hover:bg-[#1877F2]/10 text-stone-500 hover:text-[#1877F2] transition border border-stone-200"
+                    title="Facebook - ARI Media Group"
+                    aria-label="Facebook"
+                  >
+                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                  </a>
+
+                  <a
+                    href="https://www.tiktok.com/@arimediagroup?lang=it-IT"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-black transition border border-stone-200"
+                    title="TikTok - ARI Media Group"
+                    aria-label="TikTok"
+                  >
+                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z"/>
+                    </svg>
+                  </a>
+
+                  <a
+                    href="https://www.instagram.com/arimediagroup.it/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-lg bg-stone-100 hover:bg-[#E4405F]/10 text-stone-500 hover:text-[#E4405F] transition border border-stone-200"
+                    title="Instagram - ARI Media Group"
+                    aria-label="Instagram"
+                  >
+                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                    </svg>
+                  </a>
+                </div>
+
+                <p className="text-stone-400 text-[11px]">
+                  Tutti i diritti riservati © {new Date().getFullYear()} Ristorante La Pinetina & ARI Media Group
+                </p>
+              </footer>
               </div>
             </>
           )}

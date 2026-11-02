@@ -2,39 +2,39 @@ export const fullBusinessLunchMenu = {
   title: "Menù Business Lunch",
   slug: "menu-business-lunch",
   isActive: true,
-  seoTitle: "Menù Business Lunch 19-23 Ottobre 2026 | Ristorante La Pinetina",
-  seoDescription: "Menù Business Lunch di Ristorante La Pinetina valido dal 19 al 23 Ottobre 2026. Menù Primo a 12€, Secondo a 14€, Completo a 20€ (inclusi coperto, acqua e caffè), Specialità, Contorni, Dolci e Vini al calice.",
-  subtitle: "19 - 23 Ottobre 2026 | INCLUSI coperto, acqua e caffè",
+  seoTitle: "Menù Business Lunch 26-30 Ottobre 2026 | Ristorante La Pinetina",
+  seoDescription: "Menù Business Lunch di Ristorante La Pinetina valido dal 26 al 30 Ottobre 2026. Menù Primo a 12€, Secondo a 14€, Completo a 20€ (inclusi coperto, acqua e caffè), Specialità, Contorni, Dolci del giorno e Vini al calice.",
+  subtitle: "26 - 30 Ottobre 2026 | INCLUSI coperto, acqua e caffè",
   categories: [
     {
       id: "primo_scelta",
       name: "MENÙ PRIMO (a scelta) - 12€",
-      description: "Inclusi coperto, acqua e caffè - 12€",
+      description: "Pag. 0002 · Inclusi coperto, acqua e caffè - 12€",
       items: [
         {
           id: "bl_p1",
-          name: "Risotto",
-          description: "con crema di zucca e fonduta di formaggi",
+          name: "Pasta e fagioli",
+          description: "Tradizionale e cremosa pasta con fagioli",
           price: "12.00",
-          allergens: [7],
-          isFeatured: true,
+          allergens: [1, 9],
+          isFeatured: false,
           extras: []
         },
         {
           id: "bl_p2",
-          name: "Tagliolini",
-          description: "con burro agli agrumi, trota salmonata e aneto",
+          name: "Penne all’arrabbiata",
+          description: "Con pomodoro, aglio, olio e peperoncino fresco",
           price: "12.00",
-          allergens: [1, 4, 7],
+          allergens: [1],
           isFeatured: false,
           extras: []
         },
         {
           id: "bl_p3",
-          name: "Orecchiette",
-          description: "con melenzane, pomodoro, acciughe e capperi",
+          name: "Risotto",
+          description: "con fiori di zucca, ricotta e pesto di basilico",
           price: "12.00",
-          allergens: [1, 4],
+          allergens: [7, 8],
           isFeatured: false,
           extras: []
         }
@@ -43,33 +43,33 @@ export const fullBusinessLunchMenu = {
     {
       id: "secondo_scelta",
       name: "MENÙ SECONDO (a scelta) - 14€",
-      description: "Inclusi coperto, acqua e caffè - 14€",
+      description: "Pag. 0002 · Inclusi coperto, acqua e caffè - 14€",
       items: [
         {
           id: "bl_s1",
-          name: "Scaloppa di vitello al limone",
-          description: "con cavolo nero brasato",
+          name: "Tracetto di salmone ai ferri",
+          description: "con broccoli, olio e peperoncini",
           price: "14.00",
-          allergens: [1],
+          allergens: [4],
           isFeatured: false,
           extras: []
         },
         {
           id: "bl_s2",
-          name: "Polpettone ripieno",
-          description: "con scamorza e zucchine trifolate alla mentuccia",
+          name: "Polpette al pomodoro",
+          description: "con purè di patate",
           price: "14.00",
           allergens: [1, 3, 7],
-          isFeatured: true,
+          isFeatured: false,
           extras: []
         },
         {
           id: "bl_s3",
-          name: "Filetto di salmerino in crosta di patate",
-          description: "con fumetto di pesce e scarola arrostita",
+          name: "Cotoletta di lonza",
+          description: "con patatine fritte e insalata di pomodorini",
           price: "14.00",
-          allergens: [4],
-          isFeatured: true,
+          allergens: [1, 3],
+          isFeatured: false,
           extras: []
         }
       ]
@@ -77,7 +77,7 @@ export const fullBusinessLunchMenu = {
     {
       id: "completo_scelta",
       name: "MENÙ COMPLETO - 20€",
-      description: "Primo + Secondo a scelta tra le proposte del giorno (Inclusi coperto, acqua e caffè)",
+      description: "Pag. 0002 · Primo + Secondo a scelta tra le proposte del giorno (Inclusi coperto, acqua e caffè)",
       items: [
         {
           id: "bl_c1",
@@ -85,7 +85,7 @@ export const fullBusinessLunchMenu = {
           description: "Scegli un primo e un secondo tra i piatti del giorno. Inclusi coperto, acqua e caffè",
           price: "20.00",
           allergens: [],
-          isFeatured: true,
+          isFeatured: false,
           extras: []
         }
       ]
@@ -93,7 +93,7 @@ export const fullBusinessLunchMenu = {
     {
       id: "specialita",
       name: "LE SPECIALITÀ",
-      description: "Le proposte speciali dello Chef per la pausa pranzo",
+      description: "Pag. 0003 · Le proposte speciali dello Chef per la pausa pranzo",
       items: [
         {
           id: "bl_sp1",
@@ -101,15 +101,24 @@ export const fullBusinessLunchMenu = {
           description: "con tonno, acciughe e patate",
           price: "14.00",
           allergens: [3, 4],
-          isFeatured: true,
+          isFeatured: false,
           extras: []
         },
         {
           id: "bl_sp2",
-          name: "Crema di patate",
-          description: "parmentier con insalata riccia alla brace e olio al pomodoro",
-          price: "12.00",
-          allergens: [7],
+          name: "Calamarata",
+          description: "con ragù campano",
+          price: "16.00",
+          allergens: [1, 9],
+          isFeatured: false,
+          extras: []
+        },
+        {
+          id: "bl_sp3",
+          name: "Insalata di mare",
+          description: "tiepida con gamberi, calamari, merluzzo, sedano, olive e pomodorini",
+          price: "10.00",
+          allergens: [2, 4, 9, 14],
           isFeatured: false,
           extras: []
         }
@@ -118,12 +127,12 @@ export const fullBusinessLunchMenu = {
     {
       id: "contorni",
       name: "I CONTORNI - 5€",
-      description: "Contorni freschi di stagione - 5€ cad.",
+      description: "Pag. 0003 · Contorni freschi di stagione - 5€ cad.",
       items: [
         {
           id: "bl_co1",
           name: "Patate al forno",
-          description: "dorate con rosmarino fresco",
+          description: "dorate con erbe aromatiche",
           price: "5.00",
           allergens: [],
           isFeatured: false,
@@ -161,12 +170,12 @@ export const fullBusinessLunchMenu = {
     {
       id: "dolci",
       name: "DOLCE DEL GIORNO - 4€",
-      description: "I dessert della nostra pasticceria - 4€ cad.",
+      description: "Pag. 0003 · I dessert del giorno - 4€ cad.",
       items: [
         {
           id: "bl_d1",
-          name: "Frutta",
-          description: "fresca di stagione a fette",
+          name: "Sorbetto alla mela verde",
+          description: "fresco e dissetante",
           price: "4.00",
           allergens: [],
           isFeatured: false,
@@ -174,20 +183,11 @@ export const fullBusinessLunchMenu = {
         },
         {
           id: "bl_d2",
-          name: "Gelato",
-          description: "gelato artigianale di nostra produzione",
+          name: "Gelato al pistacchio",
+          description: "gelato artigianale al pistacchio",
           price: "4.00",
-          allergens: [7],
+          allergens: [7, 8],
           isFeatured: false,
-          extras: []
-        },
-        {
-          id: "bl_d3",
-          name: "Tiramisù",
-          description: "classico tiramisù della tradizione",
-          price: "4.00",
-          allergens: [1, 3, 7],
-          isFeatured: true,
           extras: []
         }
       ]
@@ -195,7 +195,7 @@ export const fullBusinessLunchMenu = {
     {
       id: "vini",
       name: "IL VINO - 5€",
-      description: "I vini selezionati al calice per il pranzo - 5€ cad.",
+      description: "Pag. 0003 · I vini selezionati al calice per il pranzo - 5€ cad.",
       items: [
         {
           id: "bl_v1",
@@ -203,7 +203,7 @@ export const fullBusinessLunchMenu = {
           description: "Pico Maccario - Calice di rosso elegante e avvolgente",
           price: "5.00",
           allergens: [12],
-          isFeatured: true,
+          isFeatured: false,
           extras: []
         },
         {
@@ -212,7 +212,7 @@ export const fullBusinessLunchMenu = {
           description: "Pico Maccario - Calice di bianco fresco, minerale e profumato",
           price: "5.00",
           allergens: [12],
-          isFeatured: true,
+          isFeatured: false,
           extras: []
         }
       ]
