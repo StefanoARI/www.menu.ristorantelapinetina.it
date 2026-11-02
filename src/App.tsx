@@ -9,11 +9,15 @@ import {
 import { fullWineMenu } from './data/wineData';
 import { fullBusinessLunchMenu } from './data/businessLunchData';
 import { fullAllaCartaMenu } from './data/allaCartaData';
+import { fullSerataBollitoMenu } from './data/serataBollitoData';
 
 export default function App() {
   const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
   const isEmbed = urlParams ? (urlParams.get('embed') === '1' || urlParams.get('embed') === 'true') : false;
-  const initialMenuKey = urlParams ? (urlParams.get('menu') || 'alla_carta') : 'alla_carta';
+  const requestedMenuParam = urlParams ? (urlParams.get('menu') || '') : '';
+  const initialMenuKey = (requestedMenuParam === 'bollito' || requestedMenuParam === 'serata-bollito' || requestedMenuParam === 'serata_bollito')
+    ? 'serata_bollito'
+    : (requestedMenuParam || 'alla_carta');
   const [activeTab, setActiveTab] = useState<'frontend' | 'admin'>('frontend');
   const [adminSection, setAdminSection] = useState<'menus' | 'users' | 'new_menu' | 'embeds'>('menus');
   const [selectedMenuType, setSelectedMenuType] = useState<string>(initialMenuKey);
@@ -102,6 +106,11 @@ export default function App() {
         loadedMenus.business_lunch = fullBusinessLunchMenu;
       }
 
+      // Assicura che il Menù Serata Bollito sia sempre presente e aggiornato
+      if (!loadedMenus.serata_bollito || !loadedMenus.serata_bollito.categories || loadedMenus.serata_bollito.categories.length < 4) {
+        loadedMenus.serata_bollito = fullSerataBollitoMenu;
+      }
+
       setMenusData(loadedMenus);
       setAllergensList(data.allergens || []);
       setAdminUsers(data.users || []);
@@ -117,11 +126,12 @@ export default function App() {
       const fallbackMenus = {
         alla_carta: fullAllaCartaMenu,
         business_lunch: fullBusinessLunchMenu,
+        serata_bollito: fullSerataBollitoMenu,
         vini: fullWineMenu
       };
       setMenusData(fallbackMenus);
-      setSelectedMenuType('alla_carta');
-      setEditingMenu(JSON.parse(JSON.stringify(fullAllaCartaMenu)));
+      setSelectedMenuType(initialMenuKey in fallbackMenus ? initialMenuKey : 'alla_carta');
+      setEditingMenu(JSON.parse(JSON.stringify(fallbackMenus[initialMenuKey in fallbackMenus ? initialMenuKey as keyof typeof fallbackMenus : 'alla_carta'])));
       setLoading(false);
     }
   };
@@ -177,6 +187,129 @@ export default function App() {
       window.scrollTo({ top: y, behavior: 'smooth' });
     }
   };
+
+  // Aggiornamento dinamico SEO (Title, Meta Description, OpenGraph e Schema.org JSON-LD)
+  useEffect(() => {
+    if (!currentMenu) return;
+
+    // Titolo dinamico
+    const seoTitle = currentMenu.seoTitle || `${currentMenu.title} | Ristorante La Pinetina`;
+    document.title = seoTitle;
+
+    // Meta Description dinamica
+    const seoDesc = currentMenu.seoDescription || (currentMenu.subtitle ? `${currentMenu.title} - ${currentMenu.subtitle}` : 'Scopri i menù digitali del Ristorante La Pinetina.');
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement('meta');
+      metaDesc.setAttribute('name', 'description');
+      document.head.appendChild(metaDesc);
+    }
+    metaDesc.setAttribute('content', seoDesc);
+
+    // OpenGraph & Twitter
+    let ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute('content', seoTitle);
+
+    let ogDesc = document.querySelector('meta[property="og:description"]');
+    if (ogDesc) ogDesc.setAttribute('content', seoDesc);
+
+    let twTitle = document.querySelector('meta[name="twitter:title"]');
+    if (twTitle) twTitle.setAttribute('content', seoTitle);
+
+    let twDesc = document.querySelector('meta[name="twitter:description"]');
+    if (twDesc) twDesc.setAttribute('content', seoDesc);
+
+    // Schema.org JSON-LD structured data injection
+    let schemaScript = document.getElementById('pinetina-seo-schema') as HTMLScriptElement | null;
+    if (!schemaScript) {
+      schemaScript = document.createElement('script');
+      schemaScript.id = 'pinetina-seo-schema';
+      schemaScript.type = 'application/ld+json';
+      document.head.appendChild(schemaScript);
+    }
+
+    const restaurantSchema = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Restaurant",
+          "@id": "https://ristorantelapinetina.it/#restaurant",
+          "name": "Ristorante La Pinetina",
+          "image": "https://ristorantelapinetina.it/wp-content/uploads/2026/05/La-Pinetina_15.jpg",
+          "telephone": "+39 031 931211",
+          "url": "https://ristorantelapinetina.it",
+          "servesCuisine": ["Italian", "Lombard", "Traditional", "Seafood", "Mediterranean"],
+          "priceRange": "€€€",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Via al Golf, 4",
+            "addressLocality": "Appiano Gentile",
+            "postalCode": "22070",
+            "addressRegion": "CO",
+            "addressCountry": "IT"
+          },
+          "hasMenu": "https://ristorantelapinetina.it/menu"
+        },
+        {
+          "@type": "Menu",
+          "@id": `https://ristorantelapinetina.it/#menu-${selectedMenuType}`,
+          "name": currentMenu.title,
+          "description": seoDesc,
+          "inLanguage": "it",
+          "hasMenuSection": (currentMenu.categories || []).map((cat: any) => ({
+            "@type": "MenuSection",
+            "name": cat.name,
+            "description": cat.description || "",
+            "hasMenuItem": (cat.items || []).map((it: any) => ({
+              "@type": "MenuItem",
+              "name": it.name,
+              "description": it.description || "",
+              "offers": {
+                "@type": "Offer",
+                "price": it.price && it.price !== "Incluso" ? it.price.replace('€', '').trim() : "40",
+                "priceCurrency": "EUR"
+              }
+            }))
+          }))
+        },
+        ...(selectedMenuType === 'serata_bollito' ? [{
+          "@type": "FoodEvent",
+          "@id": "https://ristorantelapinetina.it/#event-serata-bollito",
+          "name": "Serata Bollito - Ristorante La Pinetina",
+          "description": "Tutti i giovedì a cena: Gran carrello dei bolliti misti della tradizione con muscolo di scottona, lingua salmistrata, biancostato, cotechino artigianale, mondeghino dello chef, salse tradizionali, contorni caldi e calice di vino a 40€ a persona (coperto e acqua inclusi).",
+          "image": "/assets/aistudio/856168488_1125687653204309_8462498844499878684_n_ad3aa721.jpg",
+          "eventSchedule": {
+            "@type": "Schedule",
+            "repeatFrequency": "P1W",
+            "byDay": "https://schema.org/Thursday",
+            "startTime": "19:30",
+            "endTime": "23:00"
+          },
+          "offers": {
+            "@type": "Offer",
+            "price": "40.00",
+            "priceCurrency": "EUR",
+            "availability": "https://schema.org/InStock",
+            "description": "40€ a persona · Coperto, acqua e calice di vino a scelta inclusi"
+          },
+          "location": {
+            "@type": "Place",
+            "name": "Ristorante La Pinetina",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "Via al Golf, 4",
+              "addressLocality": "Appiano Gentile",
+              "postalCode": "22070",
+              "addressRegion": "CO",
+              "addressCountry": "IT"
+            }
+          }
+        }] : [])
+      ]
+    };
+
+    schemaScript.textContent = JSON.stringify(restaurantSchema, null, 2);
+  }, [selectedMenuType, currentMenu]);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -739,7 +872,15 @@ export default function App() {
                               : 'bg-stone-50 text-stone-700 hover:bg-stone-100 border border-stone-300'
                           }`}
                         >
-                          <Utensils className="w-4 h-4" />
+                          {key === 'vini' ? (
+                            <Wine className="w-4 h-4" />
+                          ) : key === 'business_lunch' ? (
+                            <Briefcase className="w-4 h-4" />
+                          ) : key === 'serata_bollito' ? (
+                            <Sparkles className="w-4 h-4 text-amber-300" />
+                          ) : (
+                            <Utensils className="w-4 h-4" />
+                          )}
                           <span>{m.title}</span>
                         </button>
                       );
@@ -787,6 +928,27 @@ export default function App() {
                     {currentMenu?.subtitle && (
                       <div className="mt-4 inline-block bg-[#27684a]/10 text-[#27684a] font-semibold px-4 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm border border-[#27684a]/20">
                         {currentMenu.subtitle}
+                      </div>
+                    )}
+
+                    {/* Promo Banner Serata Bollito */}
+                    {selectedMenuType === 'serata_bollito' && (
+                      <div className="mt-6 max-w-xl mx-auto">
+                        <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/20 to-amber-500/10 border border-amber-600/30 rounded-2xl p-4 sm:p-5 text-center">
+                          <div className="inline-flex items-center space-x-1.5 text-xs font-bold text-amber-900 uppercase tracking-widest mb-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Tutti i Giovedì a Cena</span>
+                          </div>
+                          <p className="font-serif text-lg sm:text-xl font-bold text-stone-900">
+                            La Tradizione del Gran Carrello dei Bolliti
+                          </p>
+                          <p className="text-xs sm:text-sm text-stone-600 mt-1">
+                            Mondeghino di benvenuto · Carrello bolliti misti · Salse & contorni caldi · Calice di vino a scelta
+                          </p>
+                          <div className="mt-3 inline-block bg-[#27684a] text-white font-bold text-xs sm:text-sm px-4 py-1.5 rounded-full shadow-xs">
+                            40€ A Persona · Coperto e Acqua Inclusi
+                          </div>
+                        </div>
                       </div>
                     )}
                     
@@ -952,8 +1114,18 @@ export default function App() {
                               </div>
                             )}
                           </div>
-                          <div className="text-2xl md:text-3xl font-serif font-bold text-[#27684a] shrink-0 text-right">
-                            {item.price ? `€${item.price}` : ''}
+                          <div className="text-xl md:text-3xl font-serif font-bold text-[#27684a] shrink-0 text-right">
+                            {item.price ? (
+                              item.price === 'Incluso' ? (
+                                <span className="inline-flex items-center text-xs font-sans font-bold bg-[#27684a]/10 text-[#27684a] px-3 py-1 rounded-full border border-[#27684a]/20 uppercase tracking-wide">
+                                  Incluso nel menù
+                                </span>
+                              ) : isNaN(Number(item.price)) ? (
+                                item.price
+                              ) : (
+                                `€${item.price}`
+                              )
+                            ) : ''}
                           </div>
                         </div>
                       ))}

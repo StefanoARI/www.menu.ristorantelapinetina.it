@@ -17,17 +17,81 @@ session_start();
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="icon" type="image/svg+xml" href="https://ristorantelapinetina.it/wp-content/uploads/2026/05/Logo_Green-V.1.svg" />
-    <title>Ristorante La Pinetina | Menù Digitali</title>
-    <meta name="description" content="Scopri i menù digitali di Ristorante La Pinetina: Menù Alla Carta, Business Lunch e Carta dei Vini." />
-    <meta property="og:title" content="Ristorante La Pinetina | Menù Digitali" />
-    <meta property="og:description" content="Scopri i menù digitali di Ristorante La Pinetina: Menù Alla Carta, Business Lunch e Carta dei Vini." />
+    <title>Ristorante La Pinetina | Menù Digitali & Serata Bollito</title>
+    <meta name="description" content="Scopri i menù digitali del Ristorante La Pinetina ad Appiano Gentile: Menù Autunnale alla Carta, Business Lunch, Serata Bollito del Giovedì a 40€ e Carta dei Vini." />
+    <meta name="keywords" content="Ristorante La Pinetina, Serata Bollito, Gran Carrello dei Bolliti, Appiano Gentile, Menù Autunnale, Business Lunch, Ristorante Como" />
+    <meta property="og:title" content="Ristorante La Pinetina | Menù Digitali & Serata Bollito" />
+    <meta property="og:description" content="Scopri i menù digitali del Ristorante La Pinetina: Menù Autunnale alla Carta, Business Lunch Settimanale, Serata Bollito del Giovedì e Carta dei Vini." />
     <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://ristorantelapinetina.it/wp-content/uploads/2026/05/La-Pinetina_15.jpg" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Ristorante La Pinetina | Menù Digitali & Serata Bollito" />
+    <meta name="twitter:description" content="Serata Bollito tutti i Giovedì sera a 40€ e menù completi del Ristorante La Pinetina." />
+    <meta name="twitter:image" content="https://ristorantelapinetina.it/wp-content/uploads/2026/05/La-Pinetina_15.jpg" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="assets/index-srdJ6uFi.js"></script>
-    <link rel="stylesheet" crossorigin href="assets/index-Cdnz6GZV.css">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Restaurant",
+          "@id": "https://ristorantelapinetina.it/#restaurant",
+          "name": "Ristorante La Pinetina",
+          "image": "https://ristorantelapinetina.it/wp-content/uploads/2026/05/La-Pinetina_15.jpg",
+          "telephone": "+39 031 931211",
+          "url": "https://ristorantelapinetina.it",
+          "servesCuisine": ["Italian", "Lombard", "Traditional", "Seafood", "Mediterranean"],
+          "priceRange": "€€€",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Via al Golf, 4",
+            "addressLocality": "Appiano Gentile",
+            "postalCode": "22070",
+            "addressRegion": "CO",
+            "addressCountry": "IT"
+          },
+          "hasMenu": "https://ristorantelapinetina.it/menu"
+        },
+        {
+          "@type": "FoodEvent",
+          "@id": "https://ristorantelapinetina.it/#event-serata-bollito",
+          "name": "Serata Bollito - Ristorante La Pinetina",
+          "description": "Tutti i giovedì a cena: Gran carrello dei bolliti misti della tradizione con muscolo di scottona, lingua salmistrata, biancostato, cotechino artigianale, mondeghino dello chef, salse, contorni e calice di vino a 40€ a persona (coperto e acqua inclusi).",
+          "image": "https://ristorantelapinetina.it/wp-content/uploads/2026/05/La-Pinetina_15.jpg",
+          "eventSchedule": {
+            "@type": "Schedule",
+            "repeatFrequency": "P1W",
+            "byDay": "https://schema.org/Thursday",
+            "startTime": "19:30",
+            "endTime": "23:00"
+          },
+          "offers": {
+            "@type": "Offer",
+            "price": "40.00",
+            "priceCurrency": "EUR",
+            "availability": "https://schema.org/InStock",
+            "description": "40€ a persona · Coperto, acqua e calice di vino a scelta inclusi"
+          },
+          "location": {
+            "@type": "Place",
+            "name": "Ristorante La Pinetina",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "Via al Golf, 4",
+              "addressLocality": "Appiano Gentile",
+              "postalCode": "22070",
+              "addressRegion": "CO",
+              "addressCountry": "IT"
+            }
+          }
+        }
+      ]
+    }
+    </script>
+    <script type="module" crossorigin src="assets/index-5h-bdu1M.js"></script>
+    <link rel="stylesheet" crossorigin href="assets/index-sDWatXe4.css">
   </head>
   <body>
     <div id="root"></div>

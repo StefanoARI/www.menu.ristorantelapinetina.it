@@ -6,6 +6,7 @@ import nodemailer from 'nodemailer';
 import { fullWineMenu } from './src/data/wineData.js';
 import { fullBusinessLunchMenu } from './src/data/businessLunchData.js';
 import { fullAllaCartaMenu } from './src/data/allaCartaData.js';
+import { fullSerataBollitoMenu } from './src/data/serataBollitoData.js';
 
 dotenv.config();
 
@@ -74,7 +75,8 @@ let adminUsers: AdminUser[] = [
 let menuData: Record<string, any> = {
   alla_carta: fullAllaCartaMenu,
   business_lunch: fullBusinessLunchMenu,
-  vini: fullWineMenu
+  vini: fullWineMenu,
+  serata_bollito: fullSerataBollitoMenu
 };
 
 let active2FACode: { code: string; email: string; expires: number } | null = null;
