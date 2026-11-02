@@ -672,16 +672,16 @@ export default function App() {
             </div>
 
           <div className="hidden md:flex items-center space-x-3">
-            {/* Sponsored by ARI Media Group - Desktop */}
+            {/* Realizzato da ARI Media Group - Desktop */}
             <a
               href="https://www.arimediagroup.it/"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center space-x-2.5 px-3.5 py-2 rounded-xl bg-stone-50 hover:bg-stone-100 border border-stone-200 transition group shadow-2xs hover:shadow-xs"
-              title="Sponsored by ARI Media Group - Visita il sito"
+              title="Realizzato da: ARI Media Group - Visita il sito"
             >
               <div className="flex flex-col text-right">
-                <span className="text-[9px] uppercase tracking-wider text-stone-400 font-bold leading-tight">Sponsored by</span>
+                <span className="text-[9px] uppercase tracking-wider text-stone-400 font-bold leading-tight">Realizzato da:</span>
                 <span className="text-xs font-bold text-stone-800 group-hover:text-[#27684a] transition">ARI Media Group</span>
               </div>
               <div className="h-7 px-1.5 py-0.5 bg-white rounded-md border border-stone-200/90 flex items-center justify-center">
@@ -725,13 +725,13 @@ export default function App() {
           </div>
 
           <div className="flex md:hidden items-center space-x-2">
-            {/* Sponsored by ARI Media Group - Mobile Header Mini Badge */}
+            {/* Realizzato da ARI Media Group - Mobile Header Mini Badge */}
             <a
               href="https://www.arimediagroup.it/"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center space-x-1.5 p-1.5 rounded-xl bg-stone-50 border border-stone-200"
-              title="Sponsored by ARI Media Group"
+              title="Realizzato da: ARI Media Group"
             >
               <div className="h-7 px-1.5 py-0.5 bg-white rounded border border-stone-200 flex items-center justify-center">
                 <img 
@@ -777,7 +777,7 @@ export default function App() {
                     />
                   </div>
                   <div className="text-left">
-                    <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold block">Sponsored by</span>
+                    <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold block">Realizzato da:</span>
                     <span className="text-xs font-bold text-stone-800 group-hover:text-[#27684a]">ARI Media Group</span>
                   </div>
                 </div>
@@ -952,16 +952,16 @@ export default function App() {
                       </div>
                     )}
                     
-                    {/* Sponsored by ARI Media Group Hero Badge */}
+                    {/* Realizzato da ARI Media Group Hero Badge */}
                     <div className="mt-5 flex items-center justify-center">
                       <a
                         href="https://www.arimediagroup.it/"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center space-x-2.5 px-4 py-1.5 rounded-full bg-stone-50 hover:bg-white border border-stone-200/90 shadow-2xs hover:shadow-md transition-all group"
-                        title="Sponsored by ARI Media Group - Visita il sito"
+                        title="Realizzato da: ARI Media Group - Visita il sito"
                       >
-                        <span className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold">Sponsored by</span>
+                        <span className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold">Realizzato da:</span>
                         <div className="h-6 px-1.5 py-0.5 bg-white rounded border border-stone-200 flex items-center justify-center">
                           <img 
                             src="https://www.arimediagroup.it/wp-content/uploads/2020/11/AriMediaGroup_Logo.png" 
@@ -1155,11 +1155,14 @@ export default function App() {
                     <div>
                       <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#27684a]/10 text-[#27684a] text-[11px] font-bold uppercase tracking-wider mb-2">
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>Official Partner & Sponsor</span>
+                        <span>Official Partner</span>
                       </div>
                       <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
-                        Sponsored by ARI Media Group
+                        Realizzato da: ARI Media Group
                       </h3>
+                      <p className="text-sm sm:text-base font-medium text-stone-600 mt-1">
+                        Agenzia di comunicazione
+                      </p>
                       
                       {/* Social Links for ARI Media Group */}
                       <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 mt-3">
@@ -1262,7 +1265,7 @@ export default function App() {
                     className="inline-flex items-center space-x-2 text-white hover:text-white/80 font-bold transition group"
                     title="Visita ARI Media Group"
                   >
-                    <span>Sponsored by ARI Media Group</span>
+                    <span>Realizzato da: ARI Media Group</span>
                     <div className="h-5 px-1.5 py-0.5 bg-white rounded border border-white/40 shadow-xs inline-flex items-center">
                       <img 
                         src="https://www.arimediagroup.it/wp-content/uploads/2020/11/AriMediaGroup_Logo.png" 
