@@ -2189,21 +2189,32 @@ export default function App() {
 
                 {adminSection === 'embeds' && (
                   <div className="max-w-4xl mx-auto bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-stone-200 space-y-8">
-                    <div>
-                      <span className="text-xs uppercase tracking-widest text-[#27684a] font-bold block mb-1">SEO & Integrazione WordPress</span>
-                      <h3 className="font-serif text-3xl font-bold text-stone-900">Codici d'Incorporamento per il Sito Ufficiale</h3>
-                      <p className="text-stone-500 text-sm mt-1">
-                        Incorpora ogni singolo menù direttamente nelle pagine dedicate del sito ufficiale con layout trasparente, responsive e Schema.org SEO integrato.
-                      </p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div>
+                        <span className="text-xs uppercase tracking-widest text-[#27684a] font-bold block mb-1">SEO & Integrazione WordPress</span>
+                        <h3 className="font-serif text-3xl font-bold text-stone-900">Codici d'Incorporamento per il Sito Ufficiale</h3>
+                        <p className="text-stone-500 text-sm mt-1">
+                          Incorpora ogni singolo menù direttamente nelle pagine dedicate del sito ufficiale con layout trasparente, responsive e Schema.org SEO integrato.
+                        </p>
+                      </div>
+                      <div className="shrink-0 bg-[#27684a]/10 text-[#27684a] px-3.5 py-1.5 rounded-xl text-xs font-bold self-start sm:self-auto border border-[#27684a]/20">
+                        {menusData ? Object.keys(menusData).length : 0} Menù Attivi
+                      </div>
                     </div>
 
                     <div className="space-y-6">
-                      {[
-                        { key: 'alla_carta', title: 'Menù Alla Carta', targetUrl: 'https://ristorantelapinetina.it/menu/' },
-                        { key: 'business_lunch', title: 'Menù Business Lunch', targetUrl: 'https://ristorantelapinetina.it/menu-business-lunch/' },
-                        { key: 'vini', title: 'Carta dei Vini', targetUrl: 'https://ristorantelapinetina.it/menu-vini/' }
-                      ].map((item) => {
-                        const iframeCode = `<iframe src="https://menu.ristorantelapinetina.it/?menu=${item.key}&embed=1" style="width:100%; min-height:850px; border:none; background:transparent;" title="${item.title} - Ristorante La Pinetina" loading="lazy"></iframe>`;
+                      {menusData && Object.entries(menusData).map(([menuKey, menu]: [string, any]) => {
+                        const title = menu?.title || menuKey;
+                        const slug = menu?.slug || menuKey.toLowerCase().replace(/[^a-z0-9_-]+/g, '-');
+                        
+                        let targetUrl = `https://ristorantelapinetina.it/${slug}/`;
+                        if (menuKey === 'alla_carta') targetUrl = 'https://ristorantelapinetina.it/menu/';
+                        else if (menuKey === 'business_lunch') targetUrl = 'https://ristorantelapinetina.it/menu-business-lunch/';
+                        else if (menuKey === 'vini') targetUrl = 'https://ristorantelapinetina.it/menu-vini/';
+                        else if (menuKey === 'serata_bollito') targetUrl = 'https://ristorantelapinetina.it/serata-bollito/';
+
+                        const encodedKey = encodeURIComponent(menuKey);
+                        const iframeCode = `<iframe src="https://menu.ristorantelapinetina.it/?menu=${encodedKey}&embed=1" style="width:100%; min-height:850px; border:none; background:transparent;" title="${title.replace(/"/g, '&quot;')} - Ristorante La Pinetina" loading="lazy"></iframe>`;
                         const schemaCode = `<script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -2212,37 +2223,56 @@ export default function App() {
   "url": "https://ristorantelapinetina.it",
   "hasMenu": {
     "@type": "Menu",
-    "name": "${item.title}",
-    "url": "${item.targetUrl}"
+    "name": "${title.replace(/"/g, '\\"')}",
+    "url": "${targetUrl}"
   }
 }
 </script>`;
                         return (
-                          <div key={item.key} className="bg-stone-50 p-6 rounded-2xl border border-stone-200 space-y-4">
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                          <div key={menuKey} className="bg-stone-50 p-6 rounded-2xl border border-stone-200 space-y-4">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                               <div>
-                                <h4 className="font-serif text-xl font-bold text-[#27684a]">{item.title}</h4>
-                                <span className="text-xs text-stone-500">Pagina di destinazione: <code className="text-stone-800 font-semibold">{item.targetUrl}</code></span>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h4 className="font-serif text-xl font-bold text-[#27684a]">{title}</h4>
+                                  <span className="text-[11px] font-mono bg-white px-2 py-0.5 rounded-md border border-stone-200 text-stone-600 font-medium">
+                                    ID: {menuKey}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-stone-500 block mt-1">
+                                  Pagina di destinazione consigliata: <code className="text-stone-800 font-semibold">{targetUrl}</code>
+                                </span>
                               </div>
-                              <a
-                                href={`https://menu.ristorantelapinetina.it/?menu=${item.key}&embed=1`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-xs px-3.5 py-1.5 bg-white border border-stone-300 rounded-lg text-stone-700 hover:text-[#27684a] font-medium"
-                              >
-                                Apri Anteprima Embed ↗
-                              </a>
+                              <div className="flex items-center space-x-2 shrink-0">
+                                <a
+                                  href={`/?menu=${encodedKey}&embed=1`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-xs px-3 py-1.5 bg-white border border-stone-300 rounded-lg text-stone-700 hover:text-[#27684a] font-medium transition cursor-pointer"
+                                  title="Anteprima Embed Locale"
+                                >
+                                  Anteprima Locale ↗
+                                </a>
+                                <a
+                                  href={`https://menu.ristorantelapinetina.it/?menu=${encodedKey}&embed=1`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-xs px-3.5 py-1.5 bg-[#27684a] hover:bg-[#1e5239] text-white rounded-lg font-medium shadow-2xs transition cursor-pointer"
+                                  title="Anteprima Produzione WordPress"
+                                >
+                                  Anteprima Ufficiale ↗
+                                </a>
+                              </div>
                             </div>
 
                             <div>
                               <div className="flex justify-between items-center mb-1">
                                 <label className="text-xs font-bold text-stone-700">1. Codice Iframe (da incollare nel blocco HTML di WordPress)</label>
                                 <button
-                                  onClick={() => copyToClipboard(iframeCode, 'iframe_' + item.key)}
-                                  className="text-xs font-semibold text-[#27684a] hover:underline flex items-center space-x-1"
+                                  onClick={() => copyToClipboard(iframeCode, 'iframe_' + menuKey)}
+                                  className="text-xs font-semibold text-[#27684a] hover:underline flex items-center space-x-1 cursor-pointer"
                                 >
-                                  {copiedEmbed === 'iframe_' + item.key ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                                  <span>{copiedEmbed === 'iframe_' + item.key ? 'Copiato!' : 'Copia Iframe'}</span>
+                                  {copiedEmbed === 'iframe_' + menuKey ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                                  <span>{copiedEmbed === 'iframe_' + menuKey ? 'Copiato!' : 'Copia Iframe'}</span>
                                 </button>
                               </div>
                               <pre className="p-3 bg-stone-900 text-stone-200 rounded-xl text-xs overflow-x-auto whitespace-pre-wrap font-mono select-all">
@@ -2254,11 +2284,11 @@ export default function App() {
                               <div className="flex justify-between items-center mb-1">
                                 <label className="text-xs font-bold text-stone-700">2. Dati Strutturati SEO Schema.org (Google Rich Snippets)</label>
                                 <button
-                                  onClick={() => copyToClipboard(schemaCode, 'schema_' + item.key)}
-                                  className="text-xs font-semibold text-[#27684a] hover:underline flex items-center space-x-1"
+                                  onClick={() => copyToClipboard(schemaCode, 'schema_' + menuKey)}
+                                  className="text-xs font-semibold text-[#27684a] hover:underline flex items-center space-x-1 cursor-pointer"
                                 >
-                                  {copiedEmbed === 'schema_' + item.key ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                                  <span>{copiedEmbed === 'schema_' + item.key ? 'Copiato!' : 'Copia Schema JSON-LD'}</span>
+                                  {copiedEmbed === 'schema_' + menuKey ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                                  <span>{copiedEmbed === 'schema_' + menuKey ? 'Copiato!' : 'Copia Schema JSON-LD'}</span>
                                 </button>
                               </div>
                               <pre className="p-3 bg-stone-900 text-emerald-400 rounded-xl text-xs overflow-x-auto whitespace-pre-wrap font-mono select-all">
