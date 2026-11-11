@@ -226,8 +226,8 @@ try {
     }
 
     // 4. GET SINGLE MENU (/api/menus/:type)
-    if (preg_match('/^menus\/([a-zA-Z0-9_\-]+)$/', $rawEndpoint, $matches) && $method === 'GET') {
-        $menuKey = $matches[1];
+    if (preg_match('/^menus\/(.+)$/', $rawEndpoint, $matches) && $method === 'GET') {
+        $menuKey = urldecode(trim($matches[1]));
         $stmt = $pdo->prepare("SELECT * FROM menus WHERE menu_key = ?");
         $stmt->execute([$menuKey]);
         $row = $stmt->fetch();
@@ -242,8 +242,8 @@ try {
     }
 
     // 5. UPDATE SINGLE MENU (/api/menus/:type)
-    if (preg_match('/^menus\/([a-zA-Z0-9_\-]+)$/', $rawEndpoint, $matches) && $method === 'POST') {
-        $menuKey = $matches[1];
+    if (preg_match('/^menus\/(.+)$/', $rawEndpoint, $matches) && $method === 'POST') {
+        $menuKey = urldecode(trim($matches[1]));
         $title = isset($input['title']) ? $input['title'] : '';
         $seoTitle = isset($input['seoTitle']) ? $input['seoTitle'] : '';
         $seoDescription = isset($input['seoDescription']) ? $input['seoDescription'] : '';
@@ -259,8 +259,8 @@ try {
     }
 
     // 5b. DELETE SINGLE MENU (/api/menus/:type)
-    if (preg_match('/^menus\/([a-zA-Z0-9_\-]+)$/', $rawEndpoint, $matches) && $method === 'DELETE') {
-        $menuKey = $matches[1];
+    if (preg_match('/^menus\/(.+)$/', $rawEndpoint, $matches) && $method === 'DELETE') {
+        $menuKey = urldecode(trim($matches[1]));
         
         $countStmt = $pdo->query("SELECT COUNT(*) as cnt FROM menus");
         $cnt = (int)$countStmt->fetchColumn();

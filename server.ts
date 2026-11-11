@@ -86,19 +86,23 @@ app.get('/api/menus', (req, res) => {
 });
 
 app.get('/api/menus/:type', (req, res) => {
-  const type = req.params.type;
-  if (menuData[type]) {
-    res.json({ menu: menuData[type], allergens: europeanAllergens });
+  const rawType = req.params.type;
+  const type = decodeURIComponent(rawType).trim();
+  const matchedKey = Object.keys(menuData).find(k => k === type || k.toLowerCase() === type.toLowerCase());
+  if (matchedKey && menuData[matchedKey]) {
+    res.json({ menu: menuData[matchedKey], allergens: europeanAllergens });
   } else {
     res.status(404).json({ error: 'Menu not found' });
   }
 });
 
 app.post('/api/menus/:type', (req, res) => {
-  const type = req.params.type;
+  const rawType = req.params.type;
+  const type = decodeURIComponent(rawType).trim();
   const updatedMenu = req.body;
-  menuData[type] = updatedMenu;
-  res.json({ success: true, menu: menuData[type] });
+  const matchedKey = Object.keys(menuData).find(k => k === type || k.toLowerCase() === type.toLowerCase()) || type;
+  menuData[matchedKey] = updatedMenu;
+  res.json({ success: true, menu: menuData[matchedKey] });
 });
 
 app.post('/api/menus', (req, res) => {
@@ -106,11 +110,12 @@ app.post('/api/menus', (req, res) => {
   if (!key || !title || !slug) {
     return res.status(400).json({ error: 'Parametri mancanti' });
   }
-  if (menuData[key]) {
+  const cleanKey = String(key).trim();
+  if (menuData[cleanKey]) {
     return res.status(400).json({ error: 'Esiste già un menù con questa chiave' });
   }
 
-  menuData[key] = {
+  menuData[cleanKey] = {
     title,
     slug,
     seoTitle: seoTitle || title + " | Ristorante La Pinetina",
@@ -131,12 +136,14 @@ app.post('/api/menus', (req, res) => {
 });
 
 app.delete('/api/menus/:type', (req, res) => {
-  const type = req.params.type;
+  const rawType = req.params.type;
+  const type = decodeURIComponent(rawType).trim();
   if (Object.keys(menuData).length <= 1) {
     return res.status(400).json({ error: 'Deve rimanere almeno un menù attivo nel sistema.' });
   }
-  if (menuData[type]) {
-    delete menuData[type];
+  const matchedKey = Object.keys(menuData).find(k => k === type || k.toLowerCase() === type.toLowerCase());
+  if (matchedKey && menuData[matchedKey]) {
+    delete menuData[matchedKey];
     res.json({ success: true, menus: menuData });
   } else {
     res.status(404).json({ error: 'Menù non trovato' });

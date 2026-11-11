@@ -384,7 +384,7 @@ export default function App() {
 
   const handleSaveMenuChanges = async () => {
     try {
-      const res = await fetch(`/api/menus/${selectedMenuType}`, {
+      const res = await fetch(`/api/menus/${encodeURIComponent(selectedMenuType)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingMenu)
@@ -403,28 +403,52 @@ export default function App() {
 
   const handleCreateNewMenu = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMenuKey || !newMenuTitle || !newMenuSlug) {
-      alert('Tutti i campi sono obbligatori.');
+    if (!newMenuTitle.trim()) {
+      alert('Il titolo del menù è obbligatorio.');
       return;
     }
+
+    // Genera una chiave URL-safe e pulita (es. 'menu_vigilia_2026')
+    const autoKey = newMenuTitle
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9_-]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+    const safeKey = (newMenuKey.trim() || autoKey)
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9_-]+/g, '_')
+      .replace(/^_+|_+$/g, '') || ('menu_' + Date.now());
+
+    const safeSlug = (newMenuSlug.trim() || safeKey.replace(/_/g, '-'))
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
     try {
       const res = await fetch('/api/menus', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: newMenuKey, title: newMenuTitle, slug: newMenuSlug })
+        body: JSON.stringify({ key: safeKey, title: newMenuTitle.trim(), slug: safeSlug })
       });
       const data = await res.json();
       if (res.ok && data.success) {
         alert('Nuovo menù creato con successo!');
         setMenusData(data.menus);
-        setSelectedMenuType(newMenuKey);
-        setEditingMenu(data.menus[newMenuKey]);
+        setSelectedMenuType(safeKey);
+        setEditingMenu(data.menus[safeKey]);
         setNewMenuKey('');
         setNewMenuTitle('');
         setNewMenuSlug('');
         setAdminSection('menus');
       } else {
-        alert('Errore: ' + data.error);
+        alert('Errore: ' + (data.error || 'Impossibile creare il menù'));
       }
     } catch (err) {
       alert('Errore di connessione.');
@@ -441,7 +465,7 @@ export default function App() {
       return;
     }
     try {
-      const res = await fetch(`/api/menus/${selectedMenuType}`, {
+      const res = await fetch(`/api/menus/${encodeURIComponent(selectedMenuType)}`, {
         method: 'DELETE'
       });
       const data = await res.json();
@@ -1946,37 +1970,65 @@ export default function App() {
 
                     <form onSubmit={handleCreateNewMenu} className="space-y-6">
                       <div>
-                        <label className="block text-sm font-semibold text-stone-700 mb-2">Chiave Unica (ID interno)</label>
+                        <label className="block text-sm font-semibold text-stone-700 mb-2">Titolo del Menù *</label>
                         <input
                           type="text"
-                          value={newMenuKey}
-                          onChange={(e) => setNewMenuKey(e.target.value)}
-                          placeholder="menu_degustazione"
+                          value={newMenuTitle}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setNewMenuTitle(val);
+                            const safe = val
+                              .toLowerCase()
+                              .trim()
+                              .normalize('NFD')
+                              .replace(/[\u0300-\u036f]/g, '')
+                              .replace(/[^a-z0-9_-]+/g, '_')
+                              .replace(/^_+|_+$/g, '');
+                            setNewMenuKey(safe);
+                            setNewMenuSlug(safe.replace(/_/g, '-'));
+                          }}
+                          placeholder="es. Menù Vigilia 2026, Menù Pasqua, Eventi Speciali..."
                           className="w-full px-4 py-3 rounded-xl border border-stone-300 outline-none focus:ring-2 focus:ring-[#27684a]"
                           required
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-stone-700 mb-2">Titolo del Menù</label>
+                        <label className="block text-sm font-semibold text-stone-700 mb-2">
+                          Chiave Unica (ID interno per il database)
+                        </label>
                         <input
                           type="text"
-                          value={newMenuTitle}
-                          onChange={(e) => setNewMenuTitle(e.target.value)}
-                          placeholder="Menù Degustazione Primavera"
-                          className="w-full px-4 py-3 rounded-xl border border-stone-300 outline-none focus:ring-2 focus:ring-[#27684a]"
+                          value={newMenuKey}
+                          onChange={(e) => {
+                            const safe = e.target.value
+                              .toLowerCase()
+                              .replace(/\s+/g, '_')
+                              .replace(/[^a-z0-9_-]/g, '');
+                            setNewMenuKey(safe);
+                          }}
+                          placeholder="es. menu_vigilia_2026"
+                          className="w-full px-4 py-3 rounded-xl border border-stone-300 outline-none focus:ring-2 focus:ring-[#27684a] font-mono text-sm bg-stone-50"
                           required
                         />
+                        <span className="text-xs text-stone-400 mt-1 block">Generato automaticamente senza spazi (es. menu_vigilia_2026) per compatibilità database.</span>
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-stone-700 mb-2">Slug URL</label>
                         <input
                           type="text"
                           value={newMenuSlug}
-                          onChange={(e) => setNewMenuSlug(e.target.value)}
-                          placeholder="menu-degustazione"
-                          className="w-full px-4 py-3 rounded-xl border border-stone-300 outline-none focus:ring-2 focus:ring-[#27684a]"
+                          onChange={(e) => {
+                            const safe = e.target.value
+                              .toLowerCase()
+                              .replace(/\s+/g, '-')
+                              .replace(/[^a-z0-9_-]/g, '');
+                            setNewMenuSlug(safe);
+                          }}
+                          placeholder="es. menu-vigilia-2026"
+                          className="w-full px-4 py-3 rounded-xl border border-stone-300 outline-none focus:ring-2 focus:ring-[#27684a] font-mono text-sm bg-stone-50"
                           required
                         />
+                        <span className="text-xs text-stone-400 mt-1 block">Utilizzato per il link pubblico e l'indirizzo della pagina.</span>
                       </div>
 
                       <button
